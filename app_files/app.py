@@ -25067,6 +25067,227 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
                 st.markdown("</div>", unsafe_allow_html=True)
 
 
+# -----------------------------------------------------------------------------
+# v66: Roger is reduced to a pure floating chat box, with cached context for
+# faster data Q&A and no quick-action buttons or separate send controls.
+# -----------------------------------------------------------------------------
+
+_roger_answer_v65_base = _roger_answer
+
+
+def _roger_cache_key_v66(selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> Tuple[Any, ...]:
+    try:
+        cutoff = str(pd.to_datetime(current_date).date()) if current_date is not None else ""
+    except Exception:
+        cutoff = str(current_date or "")
+    return (
+        int(selected_year),
+        int(selected_week),
+        str(_roger_active_month_label()),
+        str(st.session_state.get("baseline_choice") or ""),
+        cutoff,
+    )
+
+
+def _roger_assessments_cached_v66(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> List[Dict[str, Any]]:
+    key = _roger_cache_key_v66(selected_year, selected_week, current_date)
+    cache = st.session_state.setdefault("_roger_assessment_cache_v66", {})
+    if cache.get("key") == key and isinstance(cache.get("assessments"), list):
+        return cache["assessments"]
+    assessments = _roger_assessments(bundle, profiles, selected_year, selected_week, current_date)
+    st.session_state["_roger_assessment_cache_v66"] = {"key": key, "assessments": assessments}
+    return assessments
+
+
+def _roger_answer(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
+    q = str(question or "").strip()
+    if not q:
+        return "Ask me about actions, cost, progress, baseline, risks, or calculations."
+    calc = _roger_calc_answer(q)
+    if calc:
+        return calc
+    q_lower = q.lower()
+    assessments = _roger_assessments_cached_v66(bundle, profiles, selected_year, selected_week, current_date)
+    if any(word in q_lower for word in ["help", "example", "examples"]):
+        return "\n".join([
+            "**Ask Roger like this**",
+            "- Which scope has the highest exposure?",
+            "- What are the main risks this week?",
+            "- List delayed actions for Roads.",
+            "- Calculate 22.9% of 66.9m.",
+        ])
+    if any(word in q_lower for word in ["risk", "risks", "focus", "priority", "priorities", "concern", "concerns", "driver", "drivers", "problem", "problems", "attention", "critical", "what should", "what do we need"]):
+        return _roger_priority_answer_v65(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["action", "actions", "delayed", "near due", "late", "overdue", "responsible", "owner", "who"]):
+        return _roger_actions_answer(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["cost", "forecast", "budget", "vowd", "etc", "exposure", "potential", "money", "eur", "euro"]):
+        return _roger_cost_answer(q, assessments)
+    if any(word in q_lower for word in ["progress", "construction", "engineering", "deviation", "variance", "advance"]):
+        return _roger_progress_answer(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["baseline", "slip", "milestone", "schedule", "delay"]):
+        return _roger_baseline_answer(q, assessments, selected_year, selected_week)
+    scope_id = _roger_scope_from_question(q)
+    if scope_id:
+        return _roger_scope_answer(scope_id, assessments, selected_year, selected_week)
+    return _roger_overview_answer(assessments, selected_year, selected_week)
+
+
+def _roger_float_chat_css_v66() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v66{
+  position:fixed!important;
+  right:20px!important;
+  bottom:18px!important;
+  z-index:2147483000!important;
+  width:min(390px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 36px)!important;
+  overflow:auto!important;
+  padding:12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.roger-chat-head-v66{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:0 0 8px 0;
+  padding-bottom:8px;
+  border-bottom:1px solid #edf0f6;
+}
+.roger-chat-avatar-v66{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#101828,#6f2da8);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:950;
+  font-size:.82rem;
+  box-shadow:0 8px 18px rgba(57,19,92,.22);
+}
+.roger-chat-head-v66 b{
+  display:block;
+  color:#101828;
+  font-size:.98rem;
+  line-height:1.05;
+}
+.roger-chat-head-v66 span{
+  display:block;
+  color:#667085;
+  font-size:.74rem;
+  line-height:1.1;
+}
+.roger-chat-log-v66{
+  max-height:310px;
+  overflow:auto;
+  padding-right:2px;
+}
+.roger-user-v66{
+  margin:8px 0 6px auto;
+  padding:8px 10px;
+  border-radius:13px 13px 4px 13px;
+  background:#101828;
+  color:#fff;
+  font-weight:800;
+  font-size:.86rem;
+  max-width:92%;
+}
+.roger-label-v66{
+  display:inline-flex;
+  margin:8px 0 4px 0;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.66rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.roger-answer-wrap-v66{
+  font-size:.86rem;
+  line-height:1.28;
+}
+.roger-answer-wrap-v66 p,
+.roger-answer-wrap-v66 ul,
+.roger-answer-wrap-v66 ol{
+  margin-top:.25rem!important;
+  margin-bottom:.45rem!important;
+}
+.st-key-roger_float_chat_v66 div[data-testid="stChatInput"]{
+  margin-top:8px!important;
+}
+.st-key-roger_float_chat_v66 textarea{
+  min-height:42px!important;
+  border-radius:14px!important;
+  font-weight:750!important;
+}
+.st-key-roger_float_chat_v66 button[aria-label="Send message"]{
+  display:none!important;
+}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v66{
+    right:10px!important;
+    bottom:10px!important;
+    width:calc(100vw - 20px)!important;
+    max-height:calc(100vh - 20px)!important;
+  }
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+ROGER_INPUT_KEY_V67 = "roger_question_input_v67"
+
+
+def _roger_submit_text_input_v67(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    prompt = str(st.session_state.get(ROGER_INPUT_KEY_V67, "") or "").strip()
+    if not prompt:
+        return
+    _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+    st.session_state[ROGER_INPUT_KEY_V67] = ""
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me anything about the current project data.",
+        }]
+    _roger_float_chat_css_v66()
+    try:
+        roger_panel = st.container(key="roger_float_chat_v66")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        st.markdown(
+            "<div class='roger-chat-head-v66'><div class='roger-chat-avatar-v66'>RC</div><div><b>Roger</b><span>Ask about project data</span></div></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("<div class='roger-chat-log-v66'>", unsafe_allow_html=True)
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v66'>{_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v66'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v66'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        prompt = st.chat_input("Ask Roger...", key="roger_chat_input_v68")
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle()
@@ -25079,13 +25300,13 @@ def main() -> None:
     selected_year, selected_week = render_header(view_bundle_initial, selected_label_initial, panel_choice=panel_choice)
     view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
     selected_cutoff = selected_cutoff_date(view_bundle)
+    render_roger_assistant(st.session_state["bundle"], profiles, selected_year, selected_week, selected_cutoff)
     if panel_choice == "Executive overview":
         render_executive_overview(st.session_state["bundle"], profiles, selected_year, selected_week, current_date=selected_cutoff)
     elif panel_choice in {"Cost Status", globals().get("COST_PANEL_LABEL", "Cost Status")}:
         render_cost_panel(st.session_state["bundle"], profiles, selected_year, selected_week, current_date=selected_cutoff)
     else:
         render_scope_panel(st.session_state["bundle"], profiles, SCOPE_PANEL_MAP[panel_choice], selected_year, selected_week, current_date=selected_cutoff)
-    render_roger_assistant(st.session_state["bundle"], profiles, selected_year, selected_week, selected_cutoff)
     st.markdown(
         "<div class='footer-note'>Data source: uploaded weekly reports, the Rail On Site May 2026 reference presentation, BL CC E006 schedule baseline, Budget Forecast Roads-Rail-Ponds reference presentation, and selectable monthly cost reports. This app is focused only on Rail On Site (ROS), Ponds and Roads. Week labels include year to support 2024, 2025, 2026 and future history uploads.</div>",
         unsafe_allow_html=True,

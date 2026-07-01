@@ -1,7 +1,7 @@
 ﻿{
     "package":  "Roger_Campbell_Rail_Ponds_Roads_Control_Center_v35",
     "updated":  "2026-07-01",
-    "active_internal_layer":  "v65 Floating Roger virtual assistant character",
+    "active_internal_layer":  "v69 Pure floating Roger chat rendered before heavy charts with cached answers",
     "checks":  {
                    "style_only_streamlit_containers_collapsed":  true,
                    "internal_main_scroll_reset":  true,
@@ -63,6 +63,12 @@
                    "roger_supports_basic_calculations_without_external_api_key":  true,
                    "roger_floating_virtual_assistant_character":  true,
                    "roger_floating_chat_panel":  true,
-                   "roger_management_risk_focus_answers":  true
+                   "roger_management_risk_focus_answers":  true,
+                   "roger_pure_chat_box_no_quick_buttons":  true,
+                   "roger_cached_context_for_faster_answers":  true,
+                   "roger_chat_input_only":  true,
+                   "roger_enter_to_send_no_visible_buttons":  true,
+                   "roger_send_icon_hidden_for_chat_only_ux":  true,
+                   "roger_renders_before_heavy_dashboard_sections":  true
                }
 }
