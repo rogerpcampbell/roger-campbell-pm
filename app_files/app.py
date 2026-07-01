@@ -24736,6 +24736,337 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
                 st.markdown(str(message.get("content") or ""))
 
 
+# -----------------------------------------------------------------------------
+# v65: Roger becomes a floating virtual assistant character. The answer engine
+# still reads the loaded project data; this layer improves availability and UX.
+# -----------------------------------------------------------------------------
+
+ROGER_FLOAT_OPEN_KEY_V65 = "roger_float_open_v65"
+_roger_answer_v64_base = _roger_answer
+
+
+def _roger_open_v65() -> None:
+    st.session_state[ROGER_FLOAT_OPEN_KEY_V65] = True
+
+
+def _roger_close_v65() -> None:
+    st.session_state[ROGER_FLOAT_OPEN_KEY_V65] = False
+
+
+def _roger_priority_answer_v65(question: str, assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    scope_id = _roger_scope_from_question(question)
+    selected = _roger_selected_assessments(assessments, scope_id) or assessments
+    ranked: List[Tuple[float, Dict[str, Any]]] = []
+    for a in selected:
+        actions = a.get("actions") or {}
+        baseline = a.get("baseline") or {}
+        cost = a.get("cost") or {}
+        delayed = float(actions.get("Delayed", 0) or 0)
+        near = float(actions.get("Near due", 0) or 0)
+        baseline_slip = float(baseline.get("max_delay", 0) or 0)
+        exposure = float(cost.get("exposure_pct", 0) or 0)
+        con = _roger_num(a.get("construction_dev")) or 0.0
+        eng = _roger_num(a.get("engineering_dev")) or 0.0
+        negative_progress = abs(min(0.0, con)) + abs(min(0.0, eng))
+        score = delayed * 3.0 + near * 1.2 + baseline_slip / 8.0 + exposure / 12.0 + negative_progress
+        ranked.append((score, a))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    if not ranked:
+        return "I could not find enough active scope data to identify the main focus."
+    lines = [f"**Management focus - {period_display(selected_year, selected_week)}**"]
+    for idx, (_score, a) in enumerate(ranked[:3], start=1):
+        sid = str(a.get("scope_id"))
+        actions = a.get("actions") or {}
+        baseline = a.get("baseline") or {}
+        cost = a.get("cost") or {}
+        first_late = compact_text(str(a.get("first_delayed") or "No delayed action text available."), 140)
+        lines.append(
+            f"{idx}. **{_roger_scope_label(sid)}** - {a.get('label', 'Review')}: "
+            f"{int(actions.get('Delayed', 0) or 0)} delayed, {int(actions.get('Near due', 0) or 0)} near due; "
+            f"max baseline +{int(baseline.get('max_delay', 0) or 0)}d; "
+            f"cost exposure {_roger_fmt_pct(cost.get('exposure_pct'))}; "
+            f"construction {_roger_fmt_pct(a.get('construction_dev'), signed=True)} vs forecast. "
+            f"Driver: {first_late}"
+        )
+    return "\n".join(lines)
+
+
+def _roger_answer(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
+    q = str(question or "").strip()
+    q_lower = q.lower()
+    assessments = _roger_assessments(bundle, profiles, selected_year, selected_week, current_date)
+    if any(word in q_lower for word in ["risk", "risks", "focus", "priority", "priorities", "concern", "concerns", "driver", "drivers", "problem", "problems", "attention", "critical"]):
+        return _roger_priority_answer_v65(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["compare", "comparison"]) and not any(word in q_lower for word in ["cost", "budget", "forecast", "vowd", "etc"]):
+        return _roger_overview_answer(assessments, selected_year, selected_week)
+    return _roger_answer_v64_base(question, bundle, profiles, selected_year, selected_week, current_date)
+
+
+def _roger_submit_prompt_v65(prompt: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    cleaned = str(prompt or "").strip()
+    if not cleaned:
+        return
+    answer = _roger_answer(cleaned, bundle, profiles, selected_year, selected_week, current_date)
+    st.session_state[ROGER_CHAT_KEY_V64].append({"role": "user", "content": cleaned})
+    st.session_state[ROGER_CHAT_KEY_V64].append({"role": "roger", "content": answer})
+    st.session_state["_roger_interacted_v64"] = True
+    st.session_state[ROGER_FLOAT_OPEN_KEY_V65] = True
+
+
+def _roger_queue_current_input_v65() -> None:
+    prompt = str(st.session_state.get("roger_question_input_v65") or "").strip()
+    if prompt:
+        st.session_state["_roger_pending_prompt_v65"] = prompt
+
+
+def _roger_float_css_v65() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_closed_v65,
+.st-key-roger_float_panel_v65{
+  position:fixed!important;
+  right:22px!important;
+  bottom:22px!important;
+  z-index:2147483000!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.st-key-roger_float_closed_v65{
+  width:148px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.st-key-roger_float_closed_v65 .roger-character-v65{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:7px;
+  pointer-events:none;
+}
+.roger-face-v65{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#111827,#39135c 58%,#6f2da8);
+  box-shadow:0 18px 34px rgba(17,24,39,.28), inset 0 0 0 3px rgba(255,255,255,.18);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:950;
+  font-size:1.45rem;
+  letter-spacing:.02em;
+  position:relative;
+}
+.roger-face-v65:before,
+.roger-face-v65:after{
+  content:"";
+  position:absolute;
+  top:27px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#fff;
+  opacity:.95;
+}
+.roger-face-v65:before{left:22px;}
+.roger-face-v65:after{right:22px;}
+.roger-face-v65 span{
+  margin-top:22px;
+  font-size:.70rem;
+  background:rgba(255,255,255,.14);
+  border-radius:999px;
+  padding:2px 8px;
+}
+.roger-caption-v65{
+  padding:7px 11px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #d7dce8;
+  color:#101828;
+  font-weight:950;
+  box-shadow:0 10px 24px rgba(16,24,40,.14);
+}
+.st-key-roger_float_closed_v65 div.stButton > button{
+  min-height:42px!important;
+  border-radius:999px!important;
+  background:#101828!important;
+  border:1px solid #101828!important;
+  color:#fff!important;
+  font-weight:950!important;
+  box-shadow:0 14px 28px rgba(16,24,40,.24)!important;
+}
+.st-key-roger_float_panel_v65{
+  width:min(430px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 42px)!important;
+  overflow:auto!important;
+  padding:14px!important;
+  border:1px solid #d7dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.26)!important;
+}
+.roger-head-v65{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:2px 2px 10px 2px;
+  border-bottom:1px solid #edf0f6;
+  margin-bottom:10px;
+}
+.roger-mini-face-v65{
+  width:44px;
+  height:44px;
+  flex:0 0 44px;
+  border-radius:50%;
+  background:linear-gradient(145deg,#111827,#6f2da8);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:950;
+  box-shadow:0 10px 20px rgba(57,19,92,.24);
+}
+.roger-head-v65 b{
+  display:block;
+  color:#101828;
+  font-size:1rem;
+}
+.roger-head-v65 span{
+  display:block;
+  color:#667085;
+  font-size:.78rem;
+  line-height:1.2;
+}
+.st-key-roger_float_panel_v65 div.stButton > button{
+  min-height:34px!important;
+  border-radius:12px!important;
+  font-weight:900!important;
+}
+.st-key-roger_float_panel_v65 input{
+  min-height:42px!important;
+  border-radius:12px!important;
+}
+.roger-user-v65{
+  margin:9px 0 5px auto;
+  padding:9px 11px;
+  border-radius:13px 13px 4px 13px;
+  background:#101828;
+  color:#fff;
+  font-weight:800;
+  max-width:92%;
+}
+.roger-label-v65{
+  display:inline-flex;
+  margin:8px 0 3px 0;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.68rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.roger-answer-wrap-v65{
+  font-size:.88rem;
+  line-height:1.32;
+}
+.roger-hint-v65{
+  color:#667085;
+  font-size:.78rem;
+  margin:2px 0 8px 0;
+}
+@media (max-width: 720px){
+  .st-key-roger_float_closed_v65,
+  .st-key-roger_float_panel_v65{
+    right:12px!important;
+    bottom:12px!important;
+  }
+  .st-key-roger_float_panel_v65{
+    width:calc(100vw - 24px)!important;
+    max-height:calc(100vh - 24px)!important;
+  }
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Open me any time and ask about actions, costs, progress, baselines, risks, or calculations from the active project data.",
+        }]
+    if ROGER_FLOAT_OPEN_KEY_V65 not in st.session_state:
+        st.session_state[ROGER_FLOAT_OPEN_KEY_V65] = False
+    _roger_float_css_v65()
+    pending_prompt = st.session_state.pop("_roger_pending_prompt_v65", None)
+    if pending_prompt:
+        _roger_submit_prompt_v65(str(pending_prompt), bundle, profiles, selected_year, selected_week, current_date)
+
+    if not st.session_state.get(ROGER_FLOAT_OPEN_KEY_V65):
+        try:
+            roger_closed = st.container(key="roger_float_closed_v65")
+        except TypeError:
+            roger_closed = st.container()
+        with roger_closed:
+            st.markdown(
+                "<div class='roger-character-v65'><div class='roger-face-v65'><span>RC</span></div><div class='roger-caption-v65'>Roger</div></div>",
+                unsafe_allow_html=True,
+            )
+            st.button("Ask Roger", key="roger_open_button_v65", use_container_width=True, on_click=_roger_open_v65)
+        return
+
+    try:
+        roger_panel = st.container(key="roger_float_panel_v65")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_cols = st.columns([1, 0.16], gap="small")
+        with head_cols[0]:
+            st.markdown(
+                "<div class='roger-head-v65'><div class='roger-mini-face-v65'>RC</div><div><b>Roger</b><span>Project assistant - reads the loaded dashboard data</span></div></div>",
+                unsafe_allow_html=True,
+            )
+        with head_cols[1]:
+            st.button("x", key="roger_close_button_v65", use_container_width=True, on_click=_roger_close_v65)
+
+        st.markdown("<div class='roger-hint-v65'>Ask naturally: highest exposure, delayed actions, progress, risks, or calculations.</div>", unsafe_allow_html=True)
+        quick_cols = st.columns(len(ROGER_QUICK_PROMPTS_V64), gap="small")
+        prompt: Optional[str] = None
+        for col, (label, quick_prompt) in zip(quick_cols, ROGER_QUICK_PROMPTS_V64):
+            with col:
+                if st.button(label, key=f"roger_quick_{label.lower()}_v65", use_container_width=True):
+                    prompt = quick_prompt
+
+        with st.form("roger_question_form_v65", clear_on_submit=False, border=False):
+            question = st.text_input(
+                "Ask Roger",
+                placeholder="Example: What are the main risks this week? Which scope has highest ETC? Calculate 22.9% of 66.9m.",
+                key="roger_question_form_input_v65",
+                label_visibility="collapsed",
+            )
+            submitted = st.form_submit_button("Send", use_container_width=True, type="primary")
+        if submitted:
+            prompt = str(question or "").strip()
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v65'>You: {_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v65'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v65'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle()
