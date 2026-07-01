@@ -25288,6 +25288,212 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
             _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
 
 
+# v71: final active override for Roger minimize/restore and W## heatmap hover.
+
+ROGER_MINIMIZED_KEY_V71 = "roger_minimized_v71"
+
+
+def _roger_toggle_minimized_v71() -> None:
+    st.session_state[ROGER_MINIMIZED_KEY_V71] = not bool(st.session_state.get(ROGER_MINIMIZED_KEY_V71, False))
+    st.session_state["_roger_interacted_v64"] = True
+
+
+def _roger_week_short_v71(label: str) -> str:
+    match = re.search(r"\bW\s*(\d{1,2})\b", str(label or ""), re.I)
+    if match:
+        return f"W{int(match.group(1)):02d}"
+    return ""
+
+
+def _pm_heatmap_history_bar_v62(items: List[Tuple[str, float, str]]) -> str:
+    values = list(items or [])[-6:]
+    padded: List[Tuple[str, Optional[float]]] = [("", None)] * max(0, 6 - len(values))
+    padded.extend((str(week_label), float(score)) for week_label, score, _detail in values)
+    cells = []
+    for week_label, score in padded[-6:]:
+        color = "#e5e7eb" if score is None else _heatmap_pressure_color_v55(score)
+        week = _roger_week_short_v71(week_label)
+        cells.append(
+            "<span style='display:inline-block;width:25px;text-align:center;margin-right:3px;vertical-align:top'>"
+            f"<span style='display:block;font-size:9px;line-height:10px;font-weight:950;color:#f9fafb'>{_html(week)}</span>"
+            f"<span style='display:block;width:21px;height:14px;border-radius:3px;background:{color};margin:1px auto 0 auto'>&nbsp;</span>"
+            "</span>"
+        )
+    return "<span style='white-space:nowrap'>" + "".join(cells) + "</span>"
+
+
+def _roger_float_chat_css_v71() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v71{
+  position:fixed!important;
+  right:18px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:min(415px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 104px)!important;
+  overflow:hidden!important;
+  padding:12px 12px 10px 12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.st-key-roger_float_minimized_v71{
+  position:fixed!important;
+  right:20px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:56px!important;
+  height:56px!important;
+  padding:0!important;
+}
+.st-key-roger_avatar_toggle_v71 button,
+.st-key-roger_avatar_restore_v71 button{
+  width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  border:0!important;
+  background:linear-gradient(145deg,#101828,#6f2da8)!important;
+  color:#fff!important;
+  font-weight:950!important;
+  font-size:.82rem!important;
+  box-shadow:0 8px 18px rgba(57,19,92,.24)!important;
+}
+.st-key-roger_avatar_restore_v71 button{
+  width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:1rem!important;
+  box-shadow:0 18px 46px rgba(16,24,40,.24)!important;
+}
+.st-key-roger_avatar_toggle_v71 button p,
+.st-key-roger_avatar_restore_v71 button p{
+  color:#fff!important;
+  margin:0!important;
+  font-weight:950!important;
+}
+.roger-head-text-v71{padding-top:2px;}
+.roger-head-text-v71 b{display:block;color:#101828;font-size:.98rem;line-height:1.05;}
+.roger-head-text-v71 span{display:block;color:#667085;font-size:.74rem;line-height:1.1;}
+.roger-chat-divider-v71{height:1px;background:#edf0f6;margin:7px 0 8px 0;}
+.roger-chat-log-v71{
+  max-height:calc(100vh - 230px);
+  min-height:96px;
+  overflow:auto;
+  padding-right:4px;
+}
+.roger-user-v71{
+  margin:8px 0 6px auto;
+  padding:8px 10px;
+  border-radius:13px 13px 4px 13px;
+  background:#101828;
+  color:#fff;
+  font-weight:800;
+  font-size:.84rem;
+  max-width:92%;
+}
+.roger-label-v71{
+  display:inline-flex;
+  margin:8px 0 4px 0;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.64rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.roger-answer-wrap-v71{
+  font-size:.84rem;
+  line-height:1.26;
+}
+.roger-answer-wrap-v71 p,
+.roger-answer-wrap-v71 ul,
+.roger-answer-wrap-v71 ol{
+  margin-top:.2rem!important;
+  margin-bottom:.4rem!important;
+}
+.st-key-roger_float_chat_v71 div[data-testid="stChatInput"]{
+  margin-top:8px!important;
+  padding-top:8px!important;
+  border-top:1px solid #edf0f6!important;
+  background:#fff!important;
+}
+.st-key-roger_float_chat_v71 textarea{
+  min-height:40px!important;
+  max-height:40px!important;
+  padding:10px 12px!important;
+  border-radius:13px!important;
+  font-weight:750!important;
+  font-size:.84rem!important;
+  line-height:1.1!important;
+  overflow:hidden!important;
+  resize:none!important;
+}
+.st-key-roger_float_chat_v71 button[aria-label="Send message"]{display:none!important;}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v71{
+    right:10px!important;
+    bottom:58px!important;
+    width:calc(100vw - 20px)!important;
+    max-height:calc(100vh - 92px)!important;
+  }
+  .roger-chat-log-v71{max-height:calc(100vh - 218px);}
+  .st-key-roger_float_minimized_v71{right:12px!important;bottom:58px!important;}
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me anything about the current project data.",
+        }]
+    _roger_float_chat_css_v71()
+    if st.session_state.get(ROGER_MINIMIZED_KEY_V71, False):
+        try:
+            minimized = st.container(key="roger_float_minimized_v71")
+        except TypeError:
+            minimized = st.container()
+        with minimized:
+            st.button("RC", key="roger_avatar_restore_v71", help="Open Roger", on_click=_roger_toggle_minimized_v71)
+        return
+    try:
+        roger_panel = st.container(key="roger_float_chat_v71")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_avatar, head_text = st.columns([0.14, 0.86], gap="small")
+        with head_avatar:
+            st.button("RC", key="roger_avatar_toggle_v71", help="Minimise Roger", on_click=_roger_toggle_minimized_v71)
+        with head_text:
+            st.markdown("<div class='roger-head-text-v71'><b>Roger</b><span>Ask about project data</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-divider-v71'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-log-v71'>", unsafe_allow_html=True)
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v71'>{_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v71'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v71'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        prompt = st.chat_input("Ask Roger...", key="roger_chat_input_v71")
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle()
