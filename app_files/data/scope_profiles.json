@@ -1,0 +1,267 @@
+{
+  "rail": {
+    "name": "Rail On Site (ROS)",
+    "short_name": "ROS",
+    "source_area": "Rail",
+    "source_file": "BOD-SIN-OVE-PMG-REPGE-11093.pdf",
+    "source_page": 35,
+    "latest_week": 24,
+    "cutoff": "13 Jun 2026",
+    "status_label": "Interface driven - commitment and access control required",
+    "progress": {
+      "actual": 33.7,
+      "forecast": 33.7,
+      "deviation": 0.0,
+      "basis": "Railways Management progress (construction progress from scope page)"
+    },
+    "kpis": [
+      {
+        "label": "Actual progress",
+        "value": 33.7,
+        "unit": "%"
+      },
+      {
+        "label": "Forecast progress",
+        "value": 33.7,
+        "unit": "%"
+      },
+      {
+        "label": "Schedule deviation",
+        "value": 0.0,
+        "unit": "pp"
+      }
+    ],
+    "milestones": [
+      {
+        "name": "Longitudinal drainage SSY",
+        "planned": "10 Nov 2025",
+        "forecast": "15 Jul 2026",
+        "risk": "High"
+      },
+      {
+        "name": "Ballast & sub-ballast SSY",
+        "planned": "17 Nov 2025",
+        "forecast": "30 Jun 2026",
+        "risk": "Medium"
+      },
+      {
+        "name": "Trench excavation Track 1 - Section 6",
+        "planned": "28 Nov 2025",
+        "forecast": "15 Jul 2026",
+        "risk": "High"
+      },
+      {
+        "name": "North Railway - Section 7 ready for commissioning",
+        "planned": "29 May 2026",
+        "forecast": "31 Aug 2026",
+        "risk": "High"
+      }
+    ],
+    "focus": [
+      "Keep terrace filling 4B-5 and rail access/interface commitments moving through W24-W30.",
+      "Close groundworks commitment so railway crossings can start without further interface slippage.",
+      "Track Rail Memo 20/21 and hydrogen-pipeline crossing design inputs as engineering gates.",
+      "Expedite GRK rail ITP resubmission and keep quality documentation ahead of field work."
+    ],
+    "blockers": [
+      "No groundworks commitment: works cannot start with railway crossings until IDOM/Stegra alignment is ready.",
+      "Scrap Yard micropiling design is complete, but construction execution remains pending.",
+      "Existing power supply clash at Rail Section 5 can restrict rail groundworks until a technical solution is confirmed."
+    ],
+    "quality": [
+      "Close follow-up for GRK ITP resubmission for Rail, Roads and Ponds.",
+      "GRK Rail ITPs require resubmission / approval and closure of comments before workfront acceleration.",
+      "Monitor rail-related QOCs/NCRs, inspection records and Omega submissions weekly.",
+      "A total of 10 test packs remain pending for submission and documentation; Rail ITP documentation is part of the current quality gate."
+    ],
+    "insight": "Rail On Site (ROS) is controlled by construction access, design-interface and quality-documentation gates. The critical PM attention is to keep terrace filling and rail engineering memos synchronized while closing GRK ITP comments and open interface commitments.",
+    "latest_year": 2026,
+    "engineering_progress": {
+      "actual": 99.43,
+      "forecast": 99.43,
+      "deviation": 0.0
+    },
+    "engineering_items": [
+      "W24 weekly report: Rail Memo 20 expected on 06 Jul including all GW definition; Memo 21 will finalize rail design after summer break.",
+      "Hydrogen pipeline crossing and existing power supply at Section 5 remain design/interface gates for rail groundworks.",
+      "Only the remaining rail engineering gates should be tracked as actions; do not reuse global BOP engineering progress for Rail."
+    ],
+    "engineering_note": "Rail-specific value available from ROS May 2026 presentation: 99% IFC+IFR.",
+    "engineering_etc": "ETC 15 Apr 2026 / complete",
+    "construction_etc": "To be provided",
+    "next_week_fc": "2026 W25: Terrace filling 4B-5 and rail access/interface controls.",
+    "default_responsible": "Roger Campbell / Rail team",
+    "full_name": "Rail On Site (ROS)"
+  },
+  "roads": {
+    "name": "Roads",
+    "short_name": "Roads",
+    "source_area": "Roads",
+    "source_file": "BOD-SIN-OVE-PMG-REPGE-11093.pdf",
+    "source_page": 36,
+    "latest_week": 24,
+    "cutoff": "13 Jun 2026",
+    "status_label": "Early progress - backfill sequence to protect dates",
+    "progress": {
+      "actual": 4.84,
+      "forecast": 4.84,
+      "deviation": 0.0,
+      "basis": "Roads & Ditches Management progress (construction progress from scope page)"
+    },
+    "kpis": [
+      {
+        "label": "Actual progress",
+        "value": 4.84,
+        "unit": "%"
+      },
+      {
+        "label": "Forecast progress",
+        "value": 4.84,
+        "unit": "%"
+      },
+      {
+        "label": "Schedule deviation",
+        "value": 0.0,
+        "unit": "pp"
+      }
+    ],
+    "milestones": [
+      {
+        "name": "Connection Avenue 1 to Municipality Road",
+        "planned": "11 Jun 2026",
+        "forecast": "19 Jun 2026",
+        "risk": "Medium"
+      },
+      {
+        "name": "Start sub-base laying Avenue 9.5",
+        "planned": "28 Sep 2026",
+        "forecast": "24 Jul 2026",
+        "risk": "Medium"
+      },
+      {
+        "name": "Start sub-base laying Road 6",
+        "planned": "13 Jul 2026",
+        "forecast": "13 Jul 2026",
+        "risk": "Medium"
+      }
+    ],
+    "focus": [
+      "Complete backfilling Avenue 1 connection to municipality road.",
+      "Issue CR / approval path to start Avenue 9.5 backfilling and Road 6.0 works.",
+      "Track Road 6 / Road 6.1 readiness against sub-base start commitments.",
+      "Expedite GRK Road ITP resubmission and documentation approval before additional road works."
+    ],
+    "blockers": [
+      "Road 6.0 CR must be reviewed and approved to allow GRK use of Road 6.0 as laydown area for Road 6.1 / 6.2.",
+      "Road 5.1 / 5.2 has design holds due to missing TOPs to NPB207 and unresolved building definition.",
+      "Boden Energy switch houses conflict with the East ditch/service road and require Stegra decision."
+    ],
+    "quality": [
+      "Close follow-up for GRK ITP resubmission for Rail, Roads and Ponds.",
+      "A total of 10 test packs remain pending for submission and documentation; Road ITP documentation is part of the current quality gate.",
+      "GRK Roads ITPs require resubmission / approval and alignment with Stegra/EPCM comments.",
+      "Backfilling inspection records must be complete before covering works.",
+      "Monitor NOIs, QOCs, NCRs, HDPE welding documentation and material traceability for road-related works."
+    ],
+    "insight": "Roads are in an early physical-progress phase and are highly dependent on backfilling approvals and quality inspection readiness. The control focus is to remove CR / ITP / inspection blockers before Road 6, Road 6.1 and Avenue 9.5 works compress the sequence.",
+    "latest_year": 2026,
+    "engineering_progress": {
+      "actual": 89.62,
+      "forecast": 89.62,
+      "deviation": 0.0
+    },
+    "engineering_items": [
+      "Prio 5 / Sweco SUB33 area delivery dates for Roads & Ditches remain a design gate; IFR postponed and IFC follows after the IFR package.",
+      "Road 6.0 / Road 6.1 execution requires CR / field-change or site-instruction process alignment before construction sequencing is locked.",
+      "Road 5.1 / 5.2 and service-road design are affected by TOP / building definition and Boden Energy switch-house decisions."
+    ],
+    "engineering_note": "No scope-specific Roads engineering percent published; controlled through design/RFI/CR gates.",
+    "engineering_etc": "ETC July 2026",
+    "construction_etc": "To be provided",
+    "next_week_fc": "2026 W25: Completion backfilling Avenue 1 connection with municipality road.",
+    "default_responsible": "Roger Campbell / Roads team"
+  },
+  "ponds": {
+    "name": "Ponds",
+    "short_name": "Ponds",
+    "source_area": "Ponds",
+    "source_file": "BOD-SIN-OVE-PMG-REPGE-11093.pdf",
+    "source_page": 37,
+    "latest_week": 24,
+    "cutoff": "13 Jun 2026",
+    "status_label": "Quality and commitment watch - GRK documentation is a gate",
+    "progress": {
+      "actual": 27.25,
+      "forecast": 27.25,
+      "deviation": 0.0,
+      "basis": "Ponds Management progress (construction progress from scope page)"
+    },
+    "kpis": [
+      {
+        "label": "Actual progress",
+        "value": 27.25,
+        "unit": "%"
+      },
+      {
+        "label": "Forecast progress",
+        "value": 27.25,
+        "unit": "%"
+      },
+      {
+        "label": "Schedule deviation",
+        "value": 0.0,
+        "unit": "pp"
+      }
+    ],
+    "milestones": [
+      {
+        "name": "Completion West Pond 1",
+        "planned": "30 Jun 2026",
+        "forecast": "10 Jul 2026",
+        "risk": "Medium"
+      },
+      {
+        "name": "Completion West Pond 3",
+        "planned": "30 Jun 2026",
+        "forecast": "24 Jul 2026",
+        "risk": "High"
+      }
+    ],
+    "focus": [
+      "Continue West Pond 1 geomembrane installation and prepare material cover activities.",
+      "Start East Stormwater Pond and Contact Water Pond construction in the committed W25-W33 window.",
+      "Resolve Contact Water Pond commitment / pricing and remaining West Pond 3 works.",
+      "Expedite GRK Ponds ITP, HDPE welding, traceability and inspection records.",
+      "Maintain excavation, water-management and environmental controls around active pond works."
+    ],
+    "blockers": [
+      "Commitment not in place for Contact Water Pond; IDOM, GRK and Stegra must expedite the process.",
+      "Remaining works for West Pond 3 completion require expedited alignment.",
+      "GRK started Ponds works before approved ITPs in prior week; inspection records and ITP closure must be controlled."
+    ],
+    "quality": [
+      "Close follow-up for GRK ITP resubmission for Rail, Roads and Ponds.",
+      "A total of 10 test packs remain pending for submission and documentation; Pond ITP documentation is part of the current quality gate.",
+      "GRK Ponds ITPs were rejected / require resubmission and approval before the next execution step.",
+      "Retrospective inspection records are required for works started before approved ITPs.",
+      "HDPE welding, membrane installation, traceability and test-pack records must be controlled weekly."
+    ],
+    "insight": "Ponds control is no longer only construction progress. The main exposure is the combination of GRK documentation maturity, ITP approval, HDPE / geomembrane quality controls, and commitments for Contact Water Pond and West Pond 3 completion.",
+    "latest_year": 2026,
+    "engineering_progress": {
+      "actual": 98.5,
+      "forecast": 98.5,
+      "deviation": 0.0
+    },
+    "engineering_items": [
+      "Contact Water Pond membrane solution remains an engineering/design gate: HDPE + GCL / protective geotextile alternative under follow-up.",
+      "East Stormwater Pond and Contact Water Pond require design/quality readiness before the W25-W33 construction window is protected.",
+      "West Pond works require alignment between design, ITP approval, HDPE/geomembrane documentation and inspection records."
+    ],
+    "engineering_note": "No scope-specific Ponds engineering percent published; controlled through membrane/RFI/ITP design gates.",
+    "engineering_etc": "ETC late June 2026",
+    "construction_etc": "To be provided",
+    "next_week_fc": "2026 W25: West Pond 1 geomembrane installation; start construction of East Stormwater Pond.",
+    "default_responsible": "Roger Campbell / Ponds team"
+  }
+}
