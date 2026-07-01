@@ -25964,6 +25964,462 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
             _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
 
 
+# v75: Roger renders submitted questions immediately, keeps long answers inside
+# a scrollable chat log, and can search all loaded JSON data for detailed answers.
+
+_roger_answer_v75_base = _roger_answer
+
+
+def _roger_force_rerun_v75() -> None:
+    try:
+        st.rerun()
+    except AttributeError:
+        st.experimental_rerun()
+
+
+def _roger_data_file_key_v75() -> Tuple[Any, ...]:
+    tracked: List[Path] = [DATA_PATH, PROFILE_PATH, BASELINE_SCHEDULE_PATH, MONTHLY_COST_PATH]
+    if MONTHLY_COST_DIR.exists():
+        tracked.extend(sorted(MONTHLY_COST_DIR.glob("*.json")))
+    key_parts: List[Tuple[str, float, int]] = []
+    for path in tracked:
+        try:
+            stat = path.stat()
+            key_parts.append((str(path), stat.st_mtime, stat.st_size))
+        except OSError:
+            key_parts.append((str(path), 0.0, 0))
+    return tuple(key_parts)
+
+
+def _roger_walk_text_v75(obj: Any, path: str = "", depth: int = 0) -> Iterable[Tuple[str, str]]:
+    if depth > 9:
+        return
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            next_path = f"{path}.{key}" if path else str(key)
+            yield from _roger_walk_text_v75(value, next_path, depth + 1)
+        return
+    if isinstance(obj, list):
+        for idx, value in enumerate(obj):
+            next_path = f"{path}[{idx}]" if path else f"[{idx}]"
+            yield from _roger_walk_text_v75(value, next_path, depth + 1)
+        return
+    if obj is None:
+        return
+    text = " ".join(str(obj).replace("\r", " ").replace("\n", " ").split())
+    if len(text) >= 3:
+        yield path, text
+
+
+def _roger_data_sources_v75(bundle: Dict[str, Any], profiles: Dict[str, Any]) -> List[Tuple[str, Any]]:
+    sources: List[Tuple[str, Any]] = [
+        ("weekly reports", bundle),
+        ("scope profiles", profiles),
+    ]
+    try:
+        sources.append(("baseline schedule", cached_baseline_schedule()))
+    except Exception:
+        pass
+    try:
+        sources.append(("monthly cost reports", cached_monthly_cost_reports()))
+    except Exception:
+        pass
+    return sources
+
+
+def _roger_data_index_v75(bundle: Dict[str, Any], profiles: Dict[str, Any]) -> List[Dict[str, str]]:
+    bundle_counts = tuple((key, len(value)) for key, value in sorted(bundle.items()) if isinstance(value, list))
+    profile_count = len(profiles) if isinstance(profiles, dict) else 0
+    key = (_roger_data_file_key_v75(), bundle_counts, profile_count)
+    cache = st.session_state.setdefault("_roger_data_index_cache_v75", {})
+    if cache.get("key") == key and isinstance(cache.get("entries"), list):
+        return cache["entries"]
+    entries: List[Dict[str, str]] = []
+    seen: set = set()
+    for source, obj in _roger_data_sources_v75(bundle, profiles):
+        for path, text in _roger_walk_text_v75(obj):
+            snippet = compact_text(text, 360)
+            signature = (source, path, snippet)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            entries.append({
+                "source": source,
+                "path": path,
+                "text": snippet,
+                "search": f"{source} {path} {text}".lower(),
+            })
+    st.session_state["_roger_data_index_cache_v75"] = {"key": key, "entries": entries}
+    return entries
+
+
+def _roger_search_terms_v75(question: str) -> List[str]:
+    stop = {
+        "about", "above", "after", "again", "also", "and", "anything", "are", "ask", "been", "between", "can", "could",
+        "current", "data", "description", "descriptions", "detail", "details", "does",
+        "document", "documents", "find", "for", "from", "give", "had", "has", "have", "how", "into", "latest", "list",
+        "look", "mention", "mentioned", "more", "please", "report", "reports", "roger",
+        "search", "see", "show", "source", "sources", "tell", "that", "the", "their", "there", "this",
+        "was", "were", "why", "with", "what", "when", "where", "which", "would", "you", "your",
+    }
+    q_lower = str(question or "").lower()
+    terms = [word for word in re.findall(r"[a-z0-9]{3,}", q_lower) if word not in stop]
+    if "ros" in terms and "rail" not in terms:
+        terms.append("rail")
+    if "rail" in terms and "ros" not in terms:
+        terms.append("ros")
+    if "road" in terms and "roads" not in terms:
+        terms.append("roads")
+    if "drivers" in terms and "driver" not in terms:
+        terms.append("driver")
+    if "packages" in terms and "package" not in terms:
+        terms.append("package")
+    return list(dict.fromkeys(terms))[:10]
+
+
+def _roger_collect_data_hits_v75(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], limit: int = 7) -> List[Dict[str, Any]]:
+    terms = _roger_search_terms_v75(question)
+    if not terms:
+        return []
+    scored: List[Tuple[int, Dict[str, str]]] = []
+    requested_scope_terms = [term for term in terms if term in {"rail", "ros", "ponds", "roads"}]
+    for entry in _roger_data_index_v75(bundle, profiles):
+        search_text = entry.get("search", "")
+        path_text = entry.get("path", "").lower()
+        value_text = entry.get("text", "").lower()
+        if requested_scope_terms and not any(term in search_text for term in requested_scope_terms):
+            continue
+        score = 0
+        for term in terms:
+            if term in value_text:
+                score += min(12, value_text.count(term) * 4)
+            if term in path_text:
+                score += 2
+        if "driver" in terms and any(marker in path_text for marker in ["driver", "note", "description"]):
+            score += 5
+        if not any(term in value_text for term in terms) and re.fullmatch(r"[\s0-9,.\-+%EUReur€]+", entry.get("text", "")):
+            continue
+        if score:
+            scored.append((score, entry))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    results: List[Dict[str, Any]] = []
+    used_text: set = set()
+    for score, entry in scored:
+        text_key = entry.get("text", "").lower()
+        if text_key in used_text:
+            continue
+        used_text.add(text_key)
+        results.append({**entry, "score": score})
+        if len(results) >= limit:
+            break
+    return results
+
+
+def _roger_lookup_requested_v75(question: str) -> bool:
+    q_lower = str(question or "").lower()
+    markers = [
+        "all data", "loaded data", "what data", "which data", "report", "source",
+        "document", "pdf", "xlsx", "excel", "find", "search", "where", "mention",
+        "mentioned", "description", "details", "detail", "package", "quality gate",
+        "engineering gate", "monthly cost", "cost report",
+    ]
+    return any(marker in q_lower for marker in markers)
+
+
+def _roger_data_coverage_answer_v75(bundle: Dict[str, Any], profiles: Dict[str, Any]) -> str:
+    index = _roger_data_index_v75(bundle, profiles)
+    sources: Dict[str, int] = {}
+    for entry in index:
+        source = entry.get("source", "data")
+        sources[source] = sources.get(source, 0) + 1
+    source_lines = [f"- **{source.title()}**: {count:,} searchable fields" for source, count in sorted(sources.items())]
+    return "\n".join([
+        "**Roger data coverage**",
+        "I can search the loaded weekly report bundle, monthly cost reports, baseline schedule, and scope profiles.",
+        *source_lines,
+        "I also answer calculations, cost, action, progress, baseline, and scope status questions from the active period.",
+    ])
+
+
+def _roger_lookup_answer_v75(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int) -> Optional[str]:
+    q_lower = str(question or "").lower()
+    if any(marker in q_lower for marker in ["all data", "loaded data", "what data", "which data", "can you see"]):
+        return _roger_data_coverage_answer_v75(bundle, profiles)
+    hits = _roger_collect_data_hits_v75(question, bundle, profiles)
+    if not hits:
+        return None
+    lines = [f"**Data lookup - {period_display(selected_year, selected_week)}**"]
+    for hit in hits:
+        path = compact_text(str(hit.get("path") or ""), 90)
+        text = compact_text(str(hit.get("text") or ""), 220)
+        lines.append(f"- **{hit.get('source', 'data')} / {path}**: {text}")
+    return "\n".join(lines)
+
+
+def _roger_answer(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
+    q = str(question or "").strip()
+    if not q:
+        return "Ask me about actions, cost, progress, baseline, risks, calculations, or report details."
+    calc = _roger_calc_answer(q)
+    if calc:
+        return calc
+    if _roger_lookup_requested_v75(q):
+        lookup = _roger_lookup_answer_v75(q, bundle, profiles, selected_year, selected_week)
+        if lookup:
+            return lookup
+    return _roger_answer_v75_base(question, bundle, profiles, selected_year, selected_week, current_date)
+
+
+def _roger_content_html_v75(content: Any) -> str:
+    text = str(content or "").strip()
+    if not text:
+        return "<p>No answer available.</p>"
+    escaped = _html(text)
+    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    lines = escaped.splitlines()
+    output: List[str] = []
+    in_list = False
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            if in_list:
+                output.append("</ul>")
+                in_list = False
+            continue
+        if line.startswith("- ") or line.startswith("* "):
+            if not in_list:
+                output.append("<ul>")
+                in_list = True
+            output.append(f"<li>{line[2:].strip()}</li>")
+            continue
+        if in_list:
+            output.append("</ul>")
+            in_list = False
+        output.append(f"<p>{line}</p>")
+    if in_list:
+        output.append("</ul>")
+    return "".join(output)
+
+
+def _roger_history_html_v75(messages: List[Dict[str, Any]]) -> str:
+    parts: List[str] = ["<div class='roger-chat-log-v75'>"]
+    turns: List[List[Dict[str, Any]]] = []
+    for message in messages:
+        if message.get("role") == "user":
+            turns.append([message])
+        elif turns and turns[-1] and turns[-1][0].get("role") == "user" and len(turns[-1]) == 1:
+            turns[-1].append(message)
+        else:
+            turns.append([message])
+    for turn in reversed(turns[-6:]):
+        parts.append("<div class='roger-turn-v75'>")
+        for message in turn:
+            content = message.get("content", "")
+            if message.get("role") == "user":
+                parts.append(f"<div class='roger-user-v75'>{_html(content)}</div>")
+            else:
+                parts.append("<div class='roger-reply-v75'><div class='roger-label-v75'>Roger</div>")
+                parts.append(f"<div class='roger-answer-wrap-v75'>{_roger_content_html_v75(content)}</div></div>")
+        parts.append("</div>")
+    parts.append("</div>")
+    return "".join(parts)
+
+
+def _roger_float_chat_css_v75() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v75{
+  position:fixed!important;
+  right:18px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:min(410px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 92px)!important;
+  overflow:hidden!important;
+  padding:10px 12px 8px 12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+  box-sizing:border-box!important;
+}
+.st-key-roger_float_minimized_v75{
+  position:fixed!important;
+  right:20px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:56px!important;
+  height:56px!important;
+  padding:0!important;
+}
+.st-key-roger_avatar_toggle_v75 button,
+.st-key-roger_avatar_restore_v75 button{
+  width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  border:0!important;
+  background:linear-gradient(145deg,#101828,#6f2da8)!important;
+  color:#fff!important;
+  font-weight:950!important;
+  font-size:.82rem!important;
+  box-shadow:0 8px 18px rgba(57,19,92,.24)!important;
+}
+.st-key-roger_avatar_restore_v75 button{
+  width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:1rem!important;
+}
+.st-key-roger_avatar_toggle_v75 button p,
+.st-key-roger_avatar_restore_v75 button p{color:#fff!important;margin:0!important;font-weight:950!important;}
+.roger-head-text-v75{padding-top:1px;}
+.roger-head-text-v75 b{display:block;color:#101828;font-size:.95rem;line-height:1.05;}
+.roger-head-text-v75 span{display:block;color:#667085;font-size:.72rem;line-height:1.1;}
+.roger-chat-divider-v75{height:1px;background:#edf0f6;margin:6px 0 7px 0;}
+.roger-chat-log-v75{
+  height:260px;
+  max-height:260px;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding:1px 4px 2px 1px;
+  box-sizing:border-box!important;
+  scrollbar-width:thin;
+}
+.roger-turn-v75{
+  margin:0 0 8px 0;
+  padding-bottom:4px;
+  border-bottom:1px solid #f0f2f7;
+}
+.roger-turn-v75:last-child{border-bottom:0;}
+.roger-user-v75{
+  margin:7px 0 5px auto;
+  padding:8px 10px;
+  border-radius:13px 13px 4px 13px;
+  background:#101828;
+  color:#fff;
+  font-weight:800;
+  font-size:.83rem;
+  line-height:1.2;
+  max-width:92%;
+  box-sizing:border-box!important;
+}
+.roger-reply-v75{
+  max-width:100%;
+  box-sizing:border-box!important;
+}
+.roger-label-v75{
+  display:inline-flex;
+  margin:7px 0 4px 0;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.63rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.roger-answer-wrap-v75{
+  font-size:.83rem;
+  line-height:1.24;
+  color:#202939;
+  max-width:100%;
+  box-sizing:border-box!important;
+}
+.roger-user-v75,
+.roger-answer-wrap-v75,
+.roger-answer-wrap-v75 *{
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  white-space:normal!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+.roger-answer-wrap-v75 p,
+.roger-answer-wrap-v75 ul,
+.roger-answer-wrap-v75 ol{margin-top:.18rem!important;margin-bottom:.35rem!important;}
+.roger-answer-wrap-v75 ul{padding-left:1.05rem!important;}
+.roger-answer-wrap-v75 code{
+  padding:1px 4px;
+  border-radius:4px;
+  background:#f2f4f7;
+  color:#101828;
+  white-space:normal!important;
+}
+.st-key-roger_float_chat_v75 div[data-testid="stChatInput"]{
+  margin-top:7px!important;
+  padding-top:7px!important;
+  border-top:1px solid #edf0f6!important;
+  background:#fff!important;
+}
+.st-key-roger_float_chat_v75 textarea{
+  min-height:42px!important;
+  max-height:78px!important;
+  padding:9px 40px 9px 12px!important;
+  border-radius:13px!important;
+  font-weight:750!important;
+  font-size:.84rem!important;
+  line-height:1.18!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  resize:none!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+.st-key-roger_float_chat_v75 button[aria-label="Send message"]{
+  display:flex!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v75{right:10px!important;bottom:58px!important;width:calc(100vw - 20px)!important;max-height:calc(100vh - 88px)!important;}
+  .roger-chat-log-v75{height:190px;max-height:190px;}
+  .st-key-roger_float_minimized_v75{right:12px!important;bottom:58px!important;}
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. I can search the loaded weekly, cost, baseline, and scope data.",
+        }]
+    _roger_float_chat_css_v75()
+    if st.session_state.get(ROGER_MINIMIZED_KEY_V71, False):
+        try:
+            minimized = st.container(key="roger_float_minimized_v75")
+        except TypeError:
+            minimized = st.container()
+        with minimized:
+            st.button("RC", key="roger_avatar_restore_v75", help="Open Roger", on_click=_roger_toggle_minimized_v71)
+        return
+    try:
+        roger_panel = st.container(key="roger_float_chat_v75")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_avatar, head_text = st.columns([0.14, 0.86], gap="small")
+        with head_avatar:
+            st.button("RC", key="roger_avatar_toggle_v75", help="Minimise Roger", on_click=_roger_toggle_minimized_v71)
+        with head_text:
+            st.markdown("<div class='roger-head-text-v75'><b>Roger</b><span>Ask about project data</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-divider-v75'></div>", unsafe_allow_html=True)
+        st.markdown(_roger_history_html_v75(st.session_state[ROGER_CHAT_KEY_V64]), unsafe_allow_html=True)
+        prompt = st.chat_input("Ask Roger...", key="roger_chat_input_v75")
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+            _roger_force_rerun_v75()
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle()
