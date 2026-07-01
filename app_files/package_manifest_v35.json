@@ -1,7 +1,7 @@
 ﻿{
     "package":  "Roger_Campbell_Rail_Ponds_Roads_Control_Center_v35",
     "updated":  "2026-07-01",
-    "active_internal_layer":  "v63 Active week dropdown stays synced after Cost Status scope changes",
+    "active_internal_layer":  "v64 Roger project assistant for data Q&A and calculations",
     "checks":  {
                    "style_only_streamlit_containers_collapsed":  true,
                    "internal_main_scroll_reset":  true,
@@ -56,6 +56,10 @@
                    "control_pressure_heatmap_hover_color_blocks_only_no_text":  true,
                    "cost_status_scope_dropdown_return_to_overview_preserves_manual_week":  true,
                    "active_week_shadow_state_preserved_when_week_dropdown_hidden":  true,
-                   "overview_week_dropdown_reopens_on_active_week_after_cost_scope":  true
+                   "overview_week_dropdown_reopens_on_active_week_after_cost_scope":  true,
+                   "roger_project_assistant_added":  true,
+                   "roger_uses_loaded_project_data":  true,
+                   "roger_supports_actions_cost_progress_baseline_questions":  true,
+                   "roger_supports_basic_calculations_without_external_api_key":  true
                }
 }

@@ -24234,5 +24234,534 @@ def render_header(bundle: Dict[str, Any], selected_label: str, panel_choice: str
     return _selected_period_from_state_v32(source_bundle)
 
 
+# -----------------------------------------------------------------------------
+# v64: Roger project assistant. Data-aware local Q&A and calculations for the
+# active dashboard context, without requiring an external AI key.
+# -----------------------------------------------------------------------------
+
+import ast as _roger_ast
+
+ROGER_CHAT_KEY_V64 = "roger_chat_history_v64"
+ROGER_QUICK_PROMPTS_V64 = [
+    ("Portfolio", "Give me the portfolio summary."),
+    ("Actions", "List delayed and near due actions."),
+    ("Cost", "Show cost position by scope."),
+    ("Progress", "Compare construction and engineering progress."),
+]
+
+
+def _roger_num(value: Any) -> Optional[float]:
+    try:
+        return _safe_float(value)
+    except Exception:
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+
+def _roger_fmt_money(value: Any) -> str:
+    try:
+        return _fmt_money_full(value)
+    except Exception:
+        num = _roger_num(value)
+        if num is None:
+            return "N/A"
+        sign = "-" if num < 0 else ""
+        return f"{sign}EUR {abs(num) / 1_000_000:.1f}m"
+
+
+def _roger_fmt_pct(value: Any, signed: bool = False) -> str:
+    num = _roger_num(value)
+    if num is None:
+        return "N/A"
+    return f"{num:+.1f}%" if signed else f"{num:.1f}%"
+
+
+def _roger_scope_label(scope_id: str) -> str:
+    if scope_id == "all":
+        return "Portfolio"
+    try:
+        return _scope_label_v32(scope_id)
+    except Exception:
+        labels = {"rail": "Rail On Site (ROS)", "ponds": "Ponds", "roads": "Roads"}
+        return labels.get(str(scope_id), str(scope_id).title())
+
+
+def _roger_scope_from_question(question: str) -> Optional[str]:
+    q = f" {str(question or '').lower()} "
+    if any(term in q for term in [" ros ", " rail ", " rail on site ", " railway "]):
+        return "rail"
+    if any(term in q for term in [" pond ", " ponds "]):
+        return "ponds"
+    if any(term in q for term in [" road ", " roads "]):
+        return "roads"
+    return None
+
+
+def _roger_active_month_label() -> str:
+    try:
+        return _active_month_label_v29()
+    except Exception:
+        try:
+            return str((_active_cost_report() or {}).get("label") or "")
+        except Exception:
+            return ""
+
+
+def _roger_cost_row(scope_id: str) -> Dict[str, Any]:
+    try:
+        return dict(_active_history_row(scope_id))
+    except Exception:
+        return {}
+
+
+def _roger_assessments(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> List[Dict[str, Any]]:
+    try:
+        records = build_scope_records(bundle, profiles, selected_year, selected_week, scopes=CONTROL_SCOPES)
+    except Exception:
+        records = []
+    assessments: List[Dict[str, Any]] = []
+    for rec in records:
+        if rec.get("scope_id") not in {"rail", "ponds", "roads"}:
+            continue
+        try:
+            assessments.append(_pm_scope_assessment(rec, selected_year, selected_week, current_date))
+        except Exception:
+            assessments.append({
+                "scope": rec.get("name") or _roger_scope_label(str(rec.get("scope_id") or "")),
+                "scope_id": rec.get("scope_id"),
+                "label": rec.get("status") or "Review",
+                "tone": "watch",
+                "actions": {"Delayed": 0, "Near due": 0, "rows": []},
+                "baseline": {"slipped": 0, "max_delay": 0},
+                "cost": {},
+                "construction_dev": rec.get("construction_deviation"),
+                "engineering_dev": rec.get("engineering_deviation"),
+            })
+    return assessments
+
+
+def _roger_selected_assessments(assessments: List[Dict[str, Any]], scope_id: Optional[str]) -> List[Dict[str, Any]]:
+    if not scope_id:
+        return assessments
+    return [a for a in assessments if str(a.get("scope_id")) == scope_id]
+
+
+def _roger_action_rows(a: Dict[str, Any], statuses: Optional[set] = None) -> List[Dict[str, Any]]:
+    rows = list(((a.get("actions") or {}).get("rows") or []))
+    if not statuses:
+        return rows
+    try:
+        return _filter_action_rows_v32(rows, statuses)
+    except Exception:
+        return [r for r in rows if r.get("status") in statuses]
+
+
+def _roger_cost_values(scope_id: str, assessment: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    row = _roger_cost_row(scope_id)
+    cost = dict((assessment or {}).get("cost") or {})
+    forecast = row.get("Forecast", cost.get("forecast"))
+    exposure = row.get("Potential exposure", cost.get("exposure"))
+    exposure_pct = cost.get("exposure_pct")
+    if exposure_pct is None:
+        forecast_num = _roger_num(forecast)
+        exposure_num = _roger_num(exposure)
+        exposure_pct = (exposure_num / forecast_num * 100.0) if forecast_num not in (None, 0) and exposure_num is not None else None
+    potential = row.get("Potential forecast", row.get("Potential FC"))
+    return {
+        "month": row.get("Month") or _roger_active_month_label(),
+        "budget": row.get("Budget", cost.get("budget")),
+        "co": row.get("CO"),
+        "forecast": forecast,
+        "potential_exposure": exposure,
+        "potential_forecast": potential,
+        "vowd": row.get("VOWD"),
+        "etc": row.get("ETC", cost.get("etc")),
+        "exposure_pct": exposure_pct,
+    }
+
+
+def _roger_cost_line(scope_id: str, assessment: Optional[Dict[str, Any]] = None) -> str:
+    values = _roger_cost_values(scope_id, assessment)
+    return (
+        f"- **{_roger_scope_label(scope_id)}:** Potential FC {_roger_fmt_money(values.get('potential_forecast'))}; "
+        f"VOWD {_roger_fmt_money(values.get('vowd'))}; ETC {_roger_fmt_money(values.get('etc'))}; "
+        f"exposure {_roger_fmt_money(values.get('potential_exposure'))} ({_roger_fmt_pct(values.get('exposure_pct'))})."
+    )
+
+
+def _roger_overview_answer(assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    period = period_display(selected_year, selected_week)
+    delayed = sum(int((a.get("actions") or {}).get("Delayed", 0) or 0) for a in assessments)
+    near_due = sum(int((a.get("actions") or {}).get("Near due", 0) or 0) for a in assessments)
+    intervention = [a for a in assessments if str(a.get("tone")) == "critical"]
+    watch = [a for a in assessments if str(a.get("tone")) == "watch"]
+    baseline = max(assessments, key=lambda a: int((a.get("baseline") or {}).get("max_delay", 0) or 0), default=None)
+    exposure = max(assessments, key=lambda a: float(((a.get("cost") or {}).get("exposure_pct") or 0.0)), default=None)
+    lines = [
+        f"**Portfolio summary - {period}**",
+        f"- Posture: {len(intervention)} intervention scope(s), {len(watch)} watch scope(s).",
+        f"- Actions: {delayed} delayed and {near_due} near due.",
+    ]
+    if baseline:
+        lines.append(f"- Largest baseline slip: {_roger_scope_label(str(baseline.get('scope_id')))} at +{int((baseline.get('baseline') or {}).get('max_delay', 0) or 0)} days.")
+    if exposure:
+        lines.append(f"- Highest cost exposure: {_roger_scope_label(str(exposure.get('scope_id')))} at {_roger_fmt_pct((exposure.get('cost') or {}).get('exposure_pct'))}.")
+    lines.append("- Ask Roger for actions, cost, progress, baseline, or a calculation like `22.9% of 66.9m`.")
+    return "\n".join(lines)
+
+
+def _roger_actions_answer(question: str, assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    scope_id = _roger_scope_from_question(question)
+    selected = _roger_selected_assessments(assessments, scope_id)
+    rows: List[Tuple[str, Dict[str, Any]]] = []
+    for a in selected:
+        for row in _roger_action_rows(a, {"Delayed", "Near due"}):
+            rows.append((_roger_scope_label(str(a.get("scope_id"))), row))
+    rows.sort(key=lambda item: (0 if item[1].get("status") == "Delayed" else 1, str(item[1].get("expected") or "")))
+    period = period_display(selected_year, selected_week)
+    if not rows:
+        target = _roger_scope_label(scope_id) if scope_id else "the portfolio"
+        return f"**Actions - {period}**\n\nNo delayed or near-due actions were found for {target}."
+    lines = [f"**Actions - {period}**", f"{len(rows)} delayed / near-due item(s) found."]
+    for idx, (scope, row) in enumerate(rows[:12], start=1):
+        action_text = compact_text(str(row.get("action") or "No description available."), 190)
+        responsible = row.get("responsible") or "TBC"
+        expected = row.get("expected") or "TBC"
+        status = row.get("status") or "TBC"
+        lines.append(f"{idx}. **{scope}** | {status} | {expected} | {responsible}\n   {action_text}")
+    if len(rows) > 12:
+        lines.append(f"Showing first 12 of {len(rows)}. Ask for a specific scope to narrow the list.")
+    return "\n".join(lines)
+
+
+def _roger_cost_answer(question: str, assessments: List[Dict[str, Any]]) -> str:
+    q = str(question or "").lower()
+    scope_id = _roger_scope_from_question(q)
+    month = _roger_active_month_label()
+    if any(word in q for word in ["highest", "largest", "worst"]):
+        metric = "etc" if "etc" in q else "exposure_pct"
+        candidates = []
+        for a in assessments:
+            sid = str(a.get("scope_id"))
+            values = _roger_cost_values(sid, a)
+            candidates.append((sid, _roger_num(values.get(metric)), values))
+        candidates = [c for c in candidates if c[1] is not None]
+        if candidates:
+            sid, value, values = max(candidates, key=lambda item: float(item[1] or 0.0))
+            if metric == "etc":
+                return f"**Cost - {month}**\n\nHighest ETC is **{_roger_scope_label(sid)}** at {_roger_fmt_money(value)}."
+            return f"**Cost - {month}**\n\nHighest exposure is **{_roger_scope_label(sid)}** at {_roger_fmt_pct(value)} ({_roger_fmt_money(values.get('potential_exposure'))})."
+    selected = _roger_selected_assessments(assessments, scope_id)
+    if not selected:
+        selected = assessments
+    lines = [f"**Cost position - {month}**"]
+    for a in selected:
+        lines.append(_roger_cost_line(str(a.get("scope_id")), a))
+    if "etc" in q or "vowd" in q:
+        lines.append("Note: in the candle bar, VOWD is displayed as the negative movement that reduces Forecast down to ETC.")
+    return "\n".join(lines)
+
+
+def _roger_progress_answer(question: str, assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    scope_id = _roger_scope_from_question(question)
+    selected = _roger_selected_assessments(assessments, scope_id) or assessments
+    lines = [f"**Progress vs forecast - {period_display(selected_year, selected_week)}**"]
+    for a in selected:
+        con_dev = a.get("construction_dev")
+        eng_dev = a.get("engineering_dev")
+        con_actual = a.get("construction_actual")
+        eng_actual = a.get("engineering_actual")
+        lines.append(
+            f"- **{_roger_scope_label(str(a.get('scope_id')))}:** Construction {_roger_fmt_pct(con_actual)} "
+            f"({_roger_fmt_pct(con_dev, signed=True)} vs forecast); Engineering {_roger_fmt_pct(eng_actual)} "
+            f"({_roger_fmt_pct(eng_dev, signed=True)} vs forecast). Max management deviation target: 4%."
+        )
+    return "\n".join(lines)
+
+
+def _roger_baseline_answer(question: str, assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    scope_id = _roger_scope_from_question(question)
+    selected = _roger_selected_assessments(assessments, scope_id) or assessments
+    lines = [f"**Baseline status - {period_display(selected_year, selected_week)}**"]
+    for a in selected:
+        baseline = a.get("baseline") or {}
+        lines.append(
+            f"- **{_roger_scope_label(str(a.get('scope_id')))}:** {int(baseline.get('slipped', 0) or 0)} slipped milestone match(es); "
+            f"maximum slip +{int(baseline.get('max_delay', 0) or 0)} days."
+        )
+    return "\n".join(lines)
+
+
+def _roger_scope_answer(scope_id: str, assessments: List[Dict[str, Any]], selected_year: int, selected_week: int) -> str:
+    selected = _roger_selected_assessments(assessments, scope_id)
+    if not selected:
+        return f"I cannot find current data for {_roger_scope_label(scope_id)}."
+    a = selected[0]
+    actions = a.get("actions") or {}
+    baseline = a.get("baseline") or {}
+    cost_line = _roger_cost_line(scope_id, a).replace(f"- **{_roger_scope_label(scope_id)}:** ", "")
+    first_late = compact_text(str(a.get("first_delayed") or "No delayed action text available."), 170)
+    return "\n".join([
+        f"**{_roger_scope_label(scope_id)} - {period_display(selected_year, selected_week)}**",
+        f"- PM status: **{a.get('label', 'Review')}**.",
+        f"- Actions: {int(actions.get('Delayed', 0) or 0)} delayed and {int(actions.get('Near due', 0) or 0)} near due.",
+        f"- Progress: Construction {_roger_fmt_pct(a.get('construction_dev'), signed=True)} vs forecast; Engineering {_roger_fmt_pct(a.get('engineering_dev'), signed=True)} vs forecast.",
+        f"- Baseline: {int(baseline.get('slipped', 0) or 0)} slipped; max +{int(baseline.get('max_delay', 0) or 0)} days.",
+        f"- Cost: {cost_line}",
+        f"- First late item: {first_late}",
+    ])
+
+
+def _roger_eval_node(node: Any) -> float:
+    if isinstance(node, _roger_ast.Expression):
+        return _roger_eval_node(node.body)
+    if isinstance(node, _roger_ast.Constant) and isinstance(node.value, (int, float)):
+        return float(node.value)
+    if hasattr(_roger_ast, "Num") and isinstance(node, _roger_ast.Num):
+        return float(node.n)
+    if isinstance(node, _roger_ast.UnaryOp):
+        value = _roger_eval_node(node.operand)
+        if isinstance(node.op, _roger_ast.UAdd):
+            return value
+        if isinstance(node.op, _roger_ast.USub):
+            return -value
+    if isinstance(node, _roger_ast.BinOp):
+        left = _roger_eval_node(node.left)
+        right = _roger_eval_node(node.right)
+        if isinstance(node.op, _roger_ast.Add):
+            return left + right
+        if isinstance(node.op, _roger_ast.Sub):
+            return left - right
+        if isinstance(node.op, _roger_ast.Mult):
+            return left * right
+        if isinstance(node.op, _roger_ast.Div):
+            if right == 0:
+                raise ZeroDivisionError("division by zero")
+            return left / right
+        if isinstance(node.op, _roger_ast.Mod):
+            return left % right
+        if isinstance(node.op, _roger_ast.Pow):
+            if abs(right) > 8:
+                raise ValueError("power too large")
+            return left ** right
+    raise ValueError("unsupported expression")
+
+
+def _roger_expression_from_question(question: str) -> Optional[str]:
+    q = str(question or "").lower()
+    if not re.search(r"\d", q):
+        return None
+    has_math = bool(re.search(r"[\+\-\*/x]", q)) or " of " in q or "calculate" in q or "calc" in q
+    if not has_math:
+        return None
+    expr = q
+    replacements = {
+        "what is": " ",
+        "how much is": " ",
+        "calculate": " ",
+        "calc": " ",
+        "equals": " ",
+        "plus": "+",
+        "minus": "-",
+        "times": "*",
+        "multiplied by": "*",
+        "divided by": "/",
+        "eur": " ",
+        "euro": " ",
+        "euros": " ",
+    }
+    for old, new in replacements.items():
+        expr = expr.replace(old, new)
+    expr = re.sub(r"\bx\b", "*", expr)
+    expr = re.sub(r"\bof\b", "*", expr)
+    expr = re.sub(r"(\d+(?:\.\d+)?)\s*%", r"(\1/100)", expr)
+    expr = re.sub(r"(\d+(?:\.\d+)?)\s*(m|mn|million)\b", r"(\1*1000000)", expr)
+    expr = re.sub(r"(\d+(?:\.\d+)?)\s*(k|thousand)\b", r"(\1*1000)", expr)
+    expr = re.sub(r"(\d+(?:\.\d+)?)\s*(b|bn|billion)\b", r"(\1*1000000000)", expr)
+    expr = expr.replace(",", "")
+    expr = re.sub(r"[^0-9\.\+\-\*\/\%\(\)\s]", " ", expr)
+    expr = re.sub(r"\s+", " ", expr).strip()
+    if not expr or not re.search(r"[\+\-\*/]", expr):
+        return None
+    return expr
+
+
+def _roger_calc_answer(question: str) -> Optional[str]:
+    expr = _roger_expression_from_question(question)
+    if not expr:
+        return None
+    try:
+        tree = _roger_ast.parse(expr, mode="eval")
+        result = _roger_eval_node(tree)
+    except Exception as exc:
+        return f"**Calculation**\n\nI could not calculate that expression cleanly: {exc}."
+    q = str(question or "").lower()
+    is_money = bool(re.search(r"\d\s*(m|mn|million|k|thousand|b|bn|billion)\b", q)) or any(word in q for word in ["eur", "euro", "cost", "budget", "forecast", "vowd", "etc"])
+    if is_money:
+        return f"**Calculation**\n\nResult: **{_roger_fmt_money(result)}**\n\nRaw value: {result:,.2f}"
+    return f"**Calculation**\n\nResult: **{result:,.4f}**"
+
+
+def _roger_answer(question: str, bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
+    q = str(question or "").strip()
+    assessments = _roger_assessments(bundle, profiles, selected_year, selected_week, current_date)
+    if not q:
+        return "Ask me about actions, cost, progress, baseline, or calculations."
+    calc = _roger_calc_answer(q)
+    if calc:
+        return calc
+    q_lower = q.lower()
+    if any(word in q_lower for word in ["help", "example", "examples"]):
+        return "\n".join([
+            "**Roger examples**",
+            "- `Which scope has the highest cost exposure?`",
+            "- `List delayed actions for Roads`",
+            "- `Show Rail progress vs forecast`",
+            "- `Calculate 22.9% of 66.9m`",
+        ])
+    if any(word in q_lower for word in ["action", "delayed", "near due", "late", "overdue"]):
+        return _roger_actions_answer(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["cost", "forecast", "budget", "vowd", "etc", "exposure", "potential"]):
+        return _roger_cost_answer(q, assessments)
+    if any(word in q_lower for word in ["progress", "construction", "engineering", "deviation", "variance"]):
+        return _roger_progress_answer(q, assessments, selected_year, selected_week)
+    if any(word in q_lower for word in ["baseline", "slip", "milestone"]):
+        return _roger_baseline_answer(q, assessments, selected_year, selected_week)
+    scope_id = _roger_scope_from_question(q)
+    if scope_id:
+        return _roger_scope_answer(scope_id, assessments, selected_year, selected_week)
+    return _roger_overview_answer(assessments, selected_year, selected_week)
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me about actions, costs, progress, baselines, or calculations using the current project data.",
+        }]
+    st.markdown(
+        """
+<style>
+.roger-title-v64{
+  margin:22px 0 8px 0;
+  padding:12px 16px;
+  border-radius:12px;
+  background:#101828;
+  color:#fff;
+  font-weight:950;
+  letter-spacing:.01em;
+}
+.st-key-roger_card_v64{
+  border:1px solid #d8dce8!important;
+  border-radius:16px!important;
+  background:#ffffff!important;
+  box-shadow:0 14px 32px rgba(16,24,40,.08)!important;
+  padding:16px!important;
+}
+.roger-help-v64{
+  color:#667085;
+  font-size:.86rem;
+  margin:-2px 0 10px 0;
+}
+.roger-user-v64{
+  margin:12px 0 8px 0;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f4f7fb;
+  border:1px solid #e2e8f0;
+  color:#1f2937;
+  font-weight:800;
+}
+.roger-label-v64{
+  display:inline-flex;
+  margin:8px 0 4px 0;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.76rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.st-key-roger_card_v64 div.stButton > button{
+  min-height:38px!important;
+  border-radius:12px!important;
+  font-weight:900!important;
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div class='roger-title-v64'>Ask Roger</div>", unsafe_allow_html=True)
+    try:
+        roger_box = st.container(key="roger_card_v64")
+    except TypeError:
+        roger_box = st.container()
+    with roger_box:
+        st.markdown(
+            "<div class='roger-help-v64'>Roger answers from the loaded weekly reports, monthly cost history, baselines, and active dashboard period.</div>",
+            unsafe_allow_html=True,
+        )
+        prompt: Optional[str] = None
+        quick_cols = st.columns(len(ROGER_QUICK_PROMPTS_V64), gap="small")
+        for col, (label, quick_prompt) in zip(quick_cols, ROGER_QUICK_PROMPTS_V64):
+            with col:
+                if st.button(label, key=f"roger_quick_{label.lower()}_v64", use_container_width=True):
+                    prompt = quick_prompt
+        ask_cols = st.columns([1.0, 0.18], gap="small")
+        with ask_cols[0]:
+            question = st.text_input(
+                "Ask Roger",
+                placeholder="Example: Which scope has the highest exposure? Calculate 22.9% of 66.9m.",
+                key="roger_question_input_v64",
+                label_visibility="collapsed",
+            )
+        with ask_cols[1]:
+            submitted = st.button("Ask Roger", key="roger_submit_v64", use_container_width=True)
+        if submitted and str(st.session_state.get("roger_question_input_v64") or question or "").strip():
+            prompt = str(st.session_state.get("roger_question_input_v64") or question).strip()
+        if prompt:
+            answer = _roger_answer(prompt, bundle, profiles, selected_year, selected_week, current_date)
+            st.session_state[ROGER_CHAT_KEY_V64].append({"role": "user", "content": prompt})
+            st.session_state[ROGER_CHAT_KEY_V64].append({"role": "roger", "content": answer})
+            st.session_state["_roger_interacted_v64"] = True
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v64'>You: {_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v64'>Roger</div>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+
+
+def main() -> None:
+    if "bundle" not in st.session_state:
+        st.session_state["bundle"] = cached_bundle()
+    profiles = cached_profiles()
+    _latest_defaults_v32(st.session_state["bundle"])
+    panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])
+    sy0, sw0 = _selected_period_from_state_v32(st.session_state["bundle"])
+    view_bundle_initial = filter_bundle_until(st.session_state["bundle"], sy0, sw0)
+    selected_label_initial = period_display(sy0, sw0)
+    selected_year, selected_week = render_header(view_bundle_initial, selected_label_initial, panel_choice=panel_choice)
+    view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
+    selected_cutoff = selected_cutoff_date(view_bundle)
+    if panel_choice == "Executive overview":
+        render_executive_overview(st.session_state["bundle"], profiles, selected_year, selected_week, current_date=selected_cutoff)
+    elif panel_choice in {"Cost Status", globals().get("COST_PANEL_LABEL", "Cost Status")}:
+        render_cost_panel(st.session_state["bundle"], profiles, selected_year, selected_week, current_date=selected_cutoff)
+    else:
+        render_scope_panel(st.session_state["bundle"], profiles, SCOPE_PANEL_MAP[panel_choice], selected_year, selected_week, current_date=selected_cutoff)
+    render_roger_assistant(st.session_state["bundle"], profiles, selected_year, selected_week, selected_cutoff)
+    st.markdown(
+        "<div class='footer-note'>Data source: uploaded weekly reports, the Rail On Site May 2026 reference presentation, BL CC E006 schedule baseline, Budget Forecast Roads-Rail-Ponds reference presentation, and selectable monthly cost reports. This app is focused only on Rail On Site (ROS), Ponds and Roads. Week labels include year to support 2024, 2025, 2026 and future history uploads.</div>",
+        unsafe_allow_html=True,
+    )
+    if not st.session_state.pop("_roger_interacted_v64", False):
+        _reset_main_scroll_v37()
+
+
 if __name__ == "__main__":
     main()
