@@ -25494,6 +25494,476 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
             _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
 
 
+# v72: replace chat_input with an Enter-submitted form. Streamlit's chat_input can
+# lose submit events when embedded inside the floating fixed panel on Community Cloud.
+
+def _roger_float_chat_css_v72() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v72{
+  position:fixed!important;
+  right:18px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:min(415px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 104px)!important;
+  overflow:hidden!important;
+  padding:12px 12px 10px 12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.st-key-roger_float_minimized_v72{
+  position:fixed!important;
+  right:20px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:56px!important;
+  height:56px!important;
+  padding:0!important;
+}
+.st-key-roger_avatar_toggle_v72 button,
+.st-key-roger_avatar_restore_v72 button{
+  width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  border:0!important;
+  background:linear-gradient(145deg,#101828,#6f2da8)!important;
+  color:#fff!important;
+  font-weight:950!important;
+  font-size:.82rem!important;
+  box-shadow:0 8px 18px rgba(57,19,92,.24)!important;
+}
+.st-key-roger_avatar_restore_v72 button{
+  width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:1rem!important;
+  box-shadow:0 18px 46px rgba(16,24,40,.24)!important;
+}
+.st-key-roger_avatar_toggle_v72 button p,
+.st-key-roger_avatar_restore_v72 button p{
+  color:#fff!important;
+  margin:0!important;
+  font-weight:950!important;
+}
+.roger-head-text-v72{padding-top:2px;}
+.roger-head-text-v72 b{display:block;color:#101828;font-size:.98rem;line-height:1.05;}
+.roger-head-text-v72 span{display:block;color:#667085;font-size:.74rem;line-height:1.1;}
+.roger-chat-divider-v72{height:1px;background:#edf0f6;margin:7px 0 8px 0;}
+.roger-chat-log-v72{
+  max-height:calc(100vh - 230px);
+  min-height:96px;
+  overflow:auto;
+  padding-right:4px;
+}
+.roger-user-v72{
+  margin:8px 0 6px auto;
+  padding:8px 10px;
+  border-radius:13px 13px 4px 13px;
+  background:#101828;
+  color:#fff;
+  font-weight:800;
+  font-size:.84rem;
+  max-width:92%;
+}
+.roger-label-v72{
+  display:inline-flex;
+  margin:8px 0 4px 0;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#1d4ed8;
+  font-size:.64rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.roger-answer-wrap-v72{font-size:.84rem;line-height:1.26;}
+.roger-answer-wrap-v72 p,
+.roger-answer-wrap-v72 ul,
+.roger-answer-wrap-v72 ol{margin-top:.2rem!important;margin-bottom:.4rem!important;}
+.st-key-roger_float_chat_v72 div[data-testid="stForm"]{
+  border:0!important;
+  padding:8px 0 0 0!important;
+  margin-top:8px!important;
+  border-top:1px solid #edf0f6!important;
+  background:#fff!important;
+}
+.st-key-roger_float_chat_v72 div[data-testid="stTextInput"]{
+  margin:0!important;
+}
+.st-key-roger_float_chat_v72 input{
+  min-height:40px!important;
+  height:40px!important;
+  padding:9px 12px!important;
+  border-radius:13px!important;
+  font-weight:750!important;
+  font-size:.84rem!important;
+  line-height:1.1!important;
+}
+.st-key-roger_float_chat_v72 div[data-testid="stFormSubmitButton"]{
+  height:1px!important;
+  min-height:1px!important;
+  overflow:hidden!important;
+  margin:0!important;
+  padding:0!important;
+}
+.st-key-roger_float_chat_v72 div[data-testid="stFormSubmitButton"] button{
+  opacity:0!important;
+  pointer-events:none!important;
+  height:1px!important;
+  min-height:1px!important;
+  width:1px!important;
+  padding:0!important;
+  border:0!important;
+}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v72{
+    right:10px!important;
+    bottom:58px!important;
+    width:calc(100vw - 20px)!important;
+    max-height:calc(100vh - 92px)!important;
+  }
+  .roger-chat-log-v72{max-height:calc(100vh - 218px);}
+  .st-key-roger_float_minimized_v72{right:12px!important;bottom:58px!important;}
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me anything about the current project data.",
+        }]
+    _roger_float_chat_css_v72()
+    if st.session_state.get(ROGER_MINIMIZED_KEY_V71, False):
+        try:
+            minimized = st.container(key="roger_float_minimized_v72")
+        except TypeError:
+            minimized = st.container()
+        with minimized:
+            st.button("RC", key="roger_avatar_restore_v72", help="Open Roger", on_click=_roger_toggle_minimized_v71)
+        return
+    try:
+        roger_panel = st.container(key="roger_float_chat_v72")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_avatar, head_text = st.columns([0.14, 0.86], gap="small")
+        with head_avatar:
+            st.button("RC", key="roger_avatar_toggle_v72", help="Minimise Roger", on_click=_roger_toggle_minimized_v71)
+        with head_text:
+            st.markdown("<div class='roger-head-text-v72'><b>Roger</b><span>Ask about project data</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-divider-v72'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-log-v72'>", unsafe_allow_html=True)
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v72'>{_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v72'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v72'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        with st.form("roger_question_form_v72", clear_on_submit=True):
+            prompt = st.text_input("Ask Roger", placeholder="Ask Roger...", label_visibility="collapsed", key="roger_text_input_v72")
+            submitted = st.form_submit_button("Ask Roger")
+        if submitted and str(prompt or "").strip():
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+
+# v73: restore native Streamlit chat submission and keep the inline send icon
+# visible; hiding submit controls prevents messages from reaching Roger on Cloud.
+
+def _roger_float_chat_css_v73() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v73{
+  position:fixed!important;
+  right:18px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:min(415px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 104px)!important;
+  overflow:hidden!important;
+  padding:12px 12px 10px 12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.st-key-roger_float_minimized_v73{
+  position:fixed!important;
+  right:20px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:56px!important;
+  height:56px!important;
+  padding:0!important;
+}
+.st-key-roger_avatar_toggle_v73 button,
+.st-key-roger_avatar_restore_v73 button{
+  width:42px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  border:0!important;
+  background:linear-gradient(145deg,#101828,#6f2da8)!important;
+  color:#fff!important;
+  font-weight:950!important;
+  font-size:.82rem!important;
+  box-shadow:0 8px 18px rgba(57,19,92,.24)!important;
+}
+.st-key-roger_avatar_restore_v73 button{
+  width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:1rem!important;
+  box-shadow:0 18px 46px rgba(16,24,40,.24)!important;
+}
+.st-key-roger_avatar_toggle_v73 button p,
+.st-key-roger_avatar_restore_v73 button p{color:#fff!important;margin:0!important;font-weight:950!important;}
+.roger-head-text-v73{padding-top:2px;}
+.roger-head-text-v73 b{display:block;color:#101828;font-size:.98rem;line-height:1.05;}
+.roger-head-text-v73 span{display:block;color:#667085;font-size:.74rem;line-height:1.1;}
+.roger-chat-divider-v73{height:1px;background:#edf0f6;margin:7px 0 8px 0;}
+.roger-chat-log-v73{max-height:calc(100vh - 230px);min-height:96px;overflow:auto;padding-right:4px;}
+.roger-user-v73{margin:8px 0 6px auto;padding:8px 10px;border-radius:13px 13px 4px 13px;background:#101828;color:#fff;font-weight:800;font-size:.84rem;max-width:92%;}
+.roger-label-v73{display:inline-flex;margin:8px 0 4px 0;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#1d4ed8;font-size:.64rem;text-transform:uppercase;letter-spacing:.08em;font-weight:950;}
+.roger-answer-wrap-v73{font-size:.84rem;line-height:1.26;}
+.roger-answer-wrap-v73 p,
+.roger-answer-wrap-v73 ul,
+.roger-answer-wrap-v73 ol{margin-top:.2rem!important;margin-bottom:.4rem!important;}
+.st-key-roger_float_chat_v73 div[data-testid="stChatInput"]{
+  margin-top:8px!important;
+  padding-top:8px!important;
+  border-top:1px solid #edf0f6!important;
+  background:#fff!important;
+}
+.st-key-roger_float_chat_v73 textarea{
+  min-height:40px!important;
+  max-height:40px!important;
+  padding:10px 38px 10px 12px!important;
+  border-radius:13px!important;
+  font-weight:750!important;
+  font-size:.84rem!important;
+  line-height:1.1!important;
+  overflow:hidden!important;
+  resize:none!important;
+}
+.st-key-roger_float_chat_v73 button[aria-label="Send message"]{
+  display:flex!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v73{right:10px!important;bottom:58px!important;width:calc(100vw - 20px)!important;max-height:calc(100vh - 92px)!important;}
+  .roger-chat-log-v73{max-height:calc(100vh - 218px);}
+  .st-key-roger_float_minimized_v73{right:12px!important;bottom:58px!important;}
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me anything about the current project data.",
+        }]
+    _roger_float_chat_css_v73()
+    if st.session_state.get(ROGER_MINIMIZED_KEY_V71, False):
+        try:
+            minimized = st.container(key="roger_float_minimized_v73")
+        except TypeError:
+            minimized = st.container()
+        with minimized:
+            st.button("RC", key="roger_avatar_restore_v73", help="Open Roger", on_click=_roger_toggle_minimized_v71)
+        return
+    try:
+        roger_panel = st.container(key="roger_float_chat_v73")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_avatar, head_text = st.columns([0.14, 0.86], gap="small")
+        with head_avatar:
+            st.button("RC", key="roger_avatar_toggle_v73", help="Minimise Roger", on_click=_roger_toggle_minimized_v71)
+        with head_text:
+            st.markdown("<div class='roger-head-text-v73'><b>Roger</b><span>Ask about project data</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-divider-v73'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-log-v73'>", unsafe_allow_html=True)
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v73'>{_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v73'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v73'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        prompt = st.chat_input("Ask Roger...", key="roger_chat_input_v73")
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+
+# v74: compact fixed-height Roger panel so the input and send icon are always
+# visible above the app footer and Streamlit cloud controls.
+
+def _roger_float_chat_css_v74() -> None:
+    st.markdown(
+        """
+<style>
+.st-key-roger_float_chat_v74{
+  position:fixed!important;
+  right:18px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:min(400px, calc(100vw - 28px))!important;
+  max-height:calc(100vh - 92px)!important;
+  overflow:hidden!important;
+  padding:10px 12px 8px 12px!important;
+  border:1px solid #d8dce8!important;
+  border-radius:18px!important;
+  background:#ffffff!important;
+  box-shadow:0 24px 60px rgba(16,24,40,.24)!important;
+  font-family:Segoe UI, Arial, sans-serif!important;
+}
+.st-key-roger_float_minimized_v74{
+  position:fixed!important;
+  right:20px!important;
+  bottom:58px!important;
+  z-index:2147483000!important;
+  width:56px!important;
+  height:56px!important;
+  padding:0!important;
+}
+.st-key-roger_avatar_toggle_v74 button,
+.st-key-roger_avatar_restore_v74 button{
+  width:40px!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  border:0!important;
+  background:linear-gradient(145deg,#101828,#6f2da8)!important;
+  color:#fff!important;
+  font-weight:950!important;
+  font-size:.82rem!important;
+  box-shadow:0 8px 18px rgba(57,19,92,.24)!important;
+}
+.st-key-roger_avatar_restore_v74 button{
+  width:56px!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:1rem!important;
+}
+.st-key-roger_avatar_toggle_v74 button p,
+.st-key-roger_avatar_restore_v74 button p{color:#fff!important;margin:0!important;font-weight:950!important;}
+.roger-head-text-v74{padding-top:1px;}
+.roger-head-text-v74 b{display:block;color:#101828;font-size:.95rem;line-height:1.05;}
+.roger-head-text-v74 span{display:block;color:#667085;font-size:.72rem;line-height:1.1;}
+.roger-chat-divider-v74{height:1px;background:#edf0f6;margin:6px 0 7px 0;}
+.roger-chat-log-v74{
+  height:190px;
+  max-height:190px;
+  overflow:auto;
+  padding-right:4px;
+}
+.roger-user-v74{margin:7px 0 5px auto;padding:8px 10px;border-radius:13px 13px 4px 13px;background:#101828;color:#fff;font-weight:800;font-size:.83rem;max-width:92%;}
+.roger-label-v74{display:inline-flex;margin:7px 0 4px 0;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#1d4ed8;font-size:.63rem;text-transform:uppercase;letter-spacing:.08em;font-weight:950;}
+.roger-answer-wrap-v74{font-size:.83rem;line-height:1.24;}
+.roger-answer-wrap-v74 p,
+.roger-answer-wrap-v74 ul,
+.roger-answer-wrap-v74 ol{margin-top:.18rem!important;margin-bottom:.35rem!important;}
+.st-key-roger_float_chat_v74 div[data-testid="stChatInput"]{
+  margin-top:7px!important;
+  padding-top:7px!important;
+  border-top:1px solid #edf0f6!important;
+  background:#fff!important;
+}
+.st-key-roger_float_chat_v74 textarea{
+  min-height:38px!important;
+  max-height:38px!important;
+  padding:9px 38px 9px 12px!important;
+  border-radius:13px!important;
+  font-weight:750!important;
+  font-size:.84rem!important;
+  line-height:1.1!important;
+  overflow:hidden!important;
+  resize:none!important;
+}
+.st-key-roger_float_chat_v74 button[aria-label="Send message"]{
+  display:flex!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+@media (max-width:720px){
+  .st-key-roger_float_chat_v74{right:10px!important;bottom:58px!important;width:calc(100vw - 20px)!important;max-height:calc(100vh - 88px)!important;}
+  .roger-chat-log-v74{height:160px;max-height:160px;}
+  .st-key-roger_float_minimized_v74{right:12px!important;bottom:58px!important;}
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    if ROGER_CHAT_KEY_V64 not in st.session_state:
+        st.session_state[ROGER_CHAT_KEY_V64] = [{
+            "role": "roger",
+            "content": "I am Roger. Ask me anything about the current project data.",
+        }]
+    _roger_float_chat_css_v74()
+    if st.session_state.get(ROGER_MINIMIZED_KEY_V71, False):
+        try:
+            minimized = st.container(key="roger_float_minimized_v74")
+        except TypeError:
+            minimized = st.container()
+        with minimized:
+            st.button("RC", key="roger_avatar_restore_v74", help="Open Roger", on_click=_roger_toggle_minimized_v71)
+        return
+    try:
+        roger_panel = st.container(key="roger_float_chat_v74")
+    except TypeError:
+        roger_panel = st.container()
+    with roger_panel:
+        head_avatar, head_text = st.columns([0.14, 0.86], gap="small")
+        with head_avatar:
+            st.button("RC", key="roger_avatar_toggle_v74", help="Minimise Roger", on_click=_roger_toggle_minimized_v71)
+        with head_text:
+            st.markdown("<div class='roger-head-text-v74'><b>Roger</b><span>Ask about project data</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-divider-v74'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='roger-chat-log-v74'>", unsafe_allow_html=True)
+        for message in st.session_state[ROGER_CHAT_KEY_V64][-8:]:
+            if message.get("role") == "user":
+                st.markdown(f"<div class='roger-user-v74'>{_html(message.get('content', ''))}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown("<div class='roger-label-v74'>Roger</div>", unsafe_allow_html=True)
+                st.markdown("<div class='roger-answer-wrap-v74'>", unsafe_allow_html=True)
+                st.markdown(str(message.get("content") or ""))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        prompt = st.chat_input("Ask Roger...", key="roger_chat_input_v74")
+        if prompt:
+            _roger_submit_prompt_v65(prompt, bundle, profiles, selected_year, selected_week, current_date)
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle()
