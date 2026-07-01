@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "report_name": "COST-202602",
+    "source_file": "COST-202602.xlsx",
+    "cutoff_month": "2026-02",
+    "active_date": "2026-02",
+    "currency": "EUR"
+  },
+  "scope_summary": {
+    "rail": {
+      "scope_id": "rail",
+      "basis": "P. Packages - Rails On Site total row",
+      "budget": 47469217.82999998,
+      "change_order": 1631860.378322117,
+      "raw_change_order": null,
+      "forecast": 49101078.2083221,
+      "eac": 49101078.2083221,
+      "potential_exposure": 17918940.0,
+      "potential_forecast": 67020018.2083221,
+      "display_note": "Rails On Site total row from monthly cost report."
+    },
+    "ponds": {
+      "scope_id": "ponds",
+      "basis": "Carried forward from previous monthly scope split because this report does not publish a separate ponds line.",
+      "budget": 9132901.73,
+      "change_order": 1063219.4122490212,
+      "raw_change_order": 0.0,
+      "forecast": 10196121.142249022,
+      "eac": 10196121.142249022,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "Carried forward from previous monthly scope split."
+    },
+    "roads": {
+      "scope_id": "roads",
+      "basis": "Carried forward from previous monthly scope split because this report does not publish a separate roads line.",
+      "budget": 4743010.100000001,
+      "change_order": 5923481.108761973,
+      "raw_change_order": 0.0,
+      "forecast": 10666491.208761973,
+      "eac": 10666491.208761973,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "Carried forward from previous monthly scope split."
+    }
+  },
+  "packages_by_scope": {
+    "rail": [
+      {
+        "package": "BOD-BOP-001A",
+        "description": "Ground reinforcement",
+        "supplier": "GRK",
+        "budget": 14446490.499999998,
+        "change_order": 88341.00000000186,
+        "forecast": 14534831.5,
+        "potential_exposure": 0.0,
+        "potential_forecast": 14534831.5,
+        "driver_note": "-"
+      },
+      {
+        "package": "BOD-BOP-001B",
+        "description": "Vegetation removal and GW - Transfer from SIN",
+        "supplier": "GRK",
+        "budget": 3962873.3,
+        "change_order": -450000.0,
+        "forecast": 3512873.3,
+        "potential_exposure": 0.0,
+        "potential_forecast": 3512873.3,
+        "driver_note": "-"
+      },
+      {
+        "package": "BOD-BOP-019ED",
+        "description": "ROS Groundworks",
+        "supplier": "GRK",
+        "budget": 0.0,
+        "change_order": 2386545.3499999996,
+        "forecast": 2386545.3499999996,
+        "potential_exposure": 7067811.0,
+        "potential_forecast": 9454356.35,
+        "driver_note": "Unbudgeted scope, current budget comes from reallocation"
+      },
+      {
+        "package": "BOD-BOP-053",
+        "description": "Railway Infrastructure experts for Boden Corridor",
+        "supplier": "TBD",
+        "budget": 258070.23767293367,
+        "change_order": 42745.652327066346,
+        "forecast": 300815.89,
+        "potential_exposure": 72721.0,
+        "potential_forecast": 373536.89,
+        "driver_note": "Unbudgeted scope"
+      },
+      {
+        "package": "BOD-BOP-054",
+        "description": "Substructure, Railway & Catenary",
+        "supplier": "GRK",
+        "budget": 28047970.382327054,
+        "change_order": -1069022.764004957,
+        "forecast": 26978947.618322097,
+        "potential_exposure": 10147264.0,
+        "potential_forecast": 37126211.6183221,
+        "driver_note": "Higher quantities, in re-tender process"
+      },
+      {
+        "package": "BOD-BOP-061B",
+        "description": "Former SWECO Engineering commitment for ROS",
+        "supplier": "SWECO",
+        "budget": 753813.41,
+        "change_order": 45814.109999999986,
+        "forecast": 799627.52,
+        "potential_exposure": 0.0,
+        "potential_forecast": 799627.52,
+        "driver_note": "Additional engineering scopes"
+      },
+      {
+        "package": "BOD-BOP-061F",
+        "description": "New SWECO Engineering commitment - ROS 2025",
+        "supplier": "SWECO",
+        "budget": 0.0,
+        "change_order": 587437.03,
+        "forecast": 587437.03,
+        "potential_exposure": 108818.0,
+        "potential_forecast": 696255.03,
+        "driver_note": "Additional engineering scopes"
+      },
+      {
+        "package": "BOD-BOP-ROS",
+        "description": "Undefined package",
+        "supplier": "-",
+        "budget": 0.0,
+        "change_order": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 522326.0,
+        "potential_forecast": 522326.0,
+        "driver_note": "Unbudgeted scopes - additional scopes"
+      },
+      {
+        "package": "Rails On Site - Total",
+        "description": "",
+        "supplier": null,
+        "budget": 47469217.82999998,
+        "change_order": 1631860.378322117,
+        "forecast": 49101078.2083221,
+        "potential_exposure": 17918940.0,
+        "potential_forecast": 67020018.2083221,
+        "driver_note": ""
+      }
+    ],
+    "ponds": [],
+    "roads": []
+  },
+  "components_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "exposures_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "vowd_by_scope": {}
+}

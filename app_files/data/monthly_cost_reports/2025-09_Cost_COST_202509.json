@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "report_name": "COST-202509",
+    "source_file": "COST-202509.xlsx",
+    "cutoff_month": "2025-09",
+    "active_date": "2025-09",
+    "currency": "EUR"
+  },
+  "scope_summary": {
+    "rail": {
+      "scope_id": "rail",
+      "basis": "P. Packages - Rails On Site total row",
+      "budget": 47469217.85351674,
+      "change_order": -361659.0887526497,
+      "raw_change_order": 6595268.567672933,
+      "forecast": 47107558.76476409,
+      "eac": 47107558.76476409,
+      "potential_exposure": 5750715.0,
+      "potential_forecast": 52858273.76476409,
+      "display_note": "Rails On Site total row from monthly cost report."
+    },
+    "roads": {
+      "scope_id": "roads",
+      "basis": "P. Packages - SIN Roads / Roads row",
+      "budget": 4743010.100000001,
+      "change_order": 6114660.461369279,
+      "raw_change_order": 0.0,
+      "forecast": 10857670.56136928,
+      "eac": 10857670.56136928,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "Roads line from monthly cost report."
+    },
+    "ponds": {
+      "scope_id": "ponds",
+      "basis": "P. Packages - SIN Ponds and Culverts row",
+      "budget": 9132901.73,
+      "change_order": 116200.25652004033,
+      "raw_change_order": 0.0,
+      "forecast": 9249101.98652004,
+      "eac": 9249101.98652004,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "SIN Ponds and Culverts row from monthly cost report."
+    }
+  },
+  "packages_by_scope": {
+    "rail": [
+      {
+        "package": "BOD-ROS-004",
+        "description": "Engineering",
+        "supplier": "SWECO",
+        "budget": 753813.41,
+        "change_order": -0.010000000009313226,
+        "forecast": 753813.4,
+        "potential_exposure": 0.0,
+        "potential_forecast": 753813.4,
+        "driver_note": ""
+      },
+      {
+        "package": "BOD-ROS-005",
+        "description": "Ground reinforcement, Substructure, Railway & Catenary",
+        "supplier": "GRK",
+        "budget": 46457334.20584381,
+        "change_order": -361659.0787526518,
+        "forecast": 46095675.12709116,
+        "potential_exposure": 4550715.0,
+        "potential_forecast": 50646390.12709116,
+        "driver_note": ""
+      },
+      {
+        "package": "BOD-ROS-006",
+        "description": "Railway Infrastructure experts for Boden Corridor",
+        "supplier": "TBD",
+        "budget": 258070.23767293367,
+        "change_order": 0.0,
+        "forecast": 258070.23767293367,
+        "potential_exposure": 1200000.0,
+        "potential_forecast": 1458070.2376729336,
+        "driver_note": ""
+      },
+      {
+        "package": "Rails On Site - Total",
+        "description": "",
+        "supplier": null,
+        "budget": 47469217.85351674,
+        "change_order": -361659.0887526497,
+        "forecast": 47107558.76476409,
+        "potential_exposure": 5750715.0,
+        "potential_forecast": 52858273.76476409,
+        "driver_note": ""
+      }
+    ],
+    "ponds": [
+      {
+        "package": "BOD-BOP-019E",
+        "description": "SIN Ponds and Culverts",
+        "supplier": "GRK",
+        "budget": 9132901.73,
+        "change_order": 116200.25652004033,
+        "forecast": 9249101.98652004,
+        "potential_exposure": null,
+        "potential_forecast": null,
+        "driver_note": "SIN Ponds and Culverts row"
+      }
+    ],
+    "roads": [
+      {
+        "package": "BOD-BOP-019E",
+        "description": "SIN Roads",
+        "supplier": "GRK",
+        "budget": 4743010.100000001,
+        "change_order": 6114660.461369279,
+        "forecast": 10857670.56136928,
+        "potential_exposure": null,
+        "potential_forecast": null,
+        "driver_note": "Roads row"
+      }
+    ]
+  },
+  "components_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "exposures_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "vowd_by_scope": {}
+}

@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "report_name": "COST-202512",
+    "source_file": "COST-202512.xlsx",
+    "cutoff_month": "2025-12",
+    "active_date": "2025-12",
+    "currency": "EUR"
+  },
+  "scope_summary": {
+    "rail": {
+      "scope_id": "rail",
+      "basis": "P. Packages - Rails On Site total row",
+      "budget": 47469217.82999998,
+      "change_order": 955863.5619404167,
+      "raw_change_order": 2906221.025995034,
+      "forecast": 48425081.3919404,
+      "eac": 48425081.3919404,
+      "potential_exposure": 19415071.07378503,
+      "potential_forecast": 67840152.46572542,
+      "display_note": "Rails On Site total row from monthly cost report."
+    },
+    "ponds": {
+      "scope_id": "ponds",
+      "basis": "Carried forward from previous monthly scope split because this report does not publish a separate ponds line.",
+      "budget": 9132901.73,
+      "change_order": 1063219.4122490212,
+      "raw_change_order": 0.0,
+      "forecast": 10196121.142249022,
+      "eac": 10196121.142249022,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "Carried forward from previous monthly scope split."
+    },
+    "roads": {
+      "scope_id": "roads",
+      "basis": "Carried forward from previous monthly scope split because this report does not publish a separate roads line.",
+      "budget": 4743010.100000001,
+      "change_order": 5923481.108761973,
+      "raw_change_order": 0.0,
+      "forecast": 10666491.208761973,
+      "eac": 10666491.208761973,
+      "potential_exposure": null,
+      "potential_forecast": null,
+      "display_note": "Carried forward from previous monthly scope split."
+    }
+  },
+  "packages_by_scope": {
+    "rail": [
+      {
+        "package": "BOD-BOP-001A",
+        "description": "Ground reinforcement",
+        "supplier": "GRK",
+        "budget": 14446490.499999998,
+        "change_order": 88341.00000000186,
+        "forecast": 14534831.5,
+        "potential_exposure": 0.0,
+        "potential_forecast": 14534831.5,
+        "driver_note": 12923941.2
+      },
+      {
+        "package": "BOD-BOP-001B",
+        "description": "Vegetation removal and GW - Transfer from SIN",
+        "supplier": "GRK",
+        "budget": 3962873.3,
+        "change_order": -450000.0,
+        "forecast": 3512873.3,
+        "potential_exposure": 0.0,
+        "potential_forecast": 3512873.3,
+        "driver_note": 3512873.3
+      },
+      {
+        "package": "BOD-BOP-004",
+        "description": "Engineering",
+        "supplier": "SWECO",
+        "budget": 753813.41,
+        "change_order": -0.010000000009313226,
+        "forecast": 753813.4,
+        "potential_exposure": 34968.07378503015,
+        "potential_forecast": 788781.4737850302,
+        "driver_note": 753813.4
+      },
+      {
+        "package": "BOD-BOP-019E",
+        "description": "ROS Groundworks",
+        "supplier": "GRK",
+        "budget": 0.0,
+        "change_order": 2386545.3373536714,
+        "forecast": 2386545.3373536714,
+        "potential_exposure": 6867000.0,
+        "potential_forecast": 9253545.337353671,
+        "driver_note": 663489.9704363248
+      },
+      {
+        "package": "BOD-BOP-053",
+        "description": "Railway Infrastructure experts for Boden Corridor",
+        "supplier": "TBD",
+        "budget": 258070.23767293367,
+        "change_order": 0.0,
+        "forecast": 258070.23767293367,
+        "potential_exposure": 500000.0,
+        "potential_forecast": 758070.2376729336,
+        "driver_note": ""
+      },
+      {
+        "package": "BOD-BOP-054",
+        "description": "Substructure, Railway & Catenary",
+        "supplier": "GRK",
+        "budget": 28047970.382327054,
+        "change_order": -1069022.7654132582,
+        "forecast": 26978947.616913795,
+        "potential_exposure": 8982292.0,
+        "potential_forecast": 35961239.616913795,
+        "driver_note": 11608626.426692361
+      },
+      {
+        "package": "BOD-BOP-ROS",
+        "description": "Undefined package",
+        "supplier": "-",
+        "budget": 0.0,
+        "change_order": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 3030811.0,
+        "potential_forecast": 3030811.0,
+        "driver_note": ""
+      },
+      {
+        "package": "Rails On Site - Total",
+        "description": "",
+        "supplier": null,
+        "budget": 47469217.82999998,
+        "change_order": 955863.5619404167,
+        "forecast": 48425081.3919404,
+        "potential_exposure": 19415071.07378503,
+        "potential_forecast": 67840152.46572542,
+        "driver_note": 29462744.297128685
+      }
+    ],
+    "ponds": [],
+    "roads": []
+  },
+  "components_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "exposures_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "vowd_by_scope": {}
+}

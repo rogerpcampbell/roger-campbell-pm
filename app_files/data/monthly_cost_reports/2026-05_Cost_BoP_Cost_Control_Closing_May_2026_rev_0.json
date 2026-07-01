@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "report_name": "BoP_Cost Control_Closing May 2026_rev.0",
+    "source_file": "BoP_Cost Control_Closing May 2026_rev.0.xlsx",
+    "cutoff_month": "2026-05",
+    "active_date": "2026-05",
+    "currency": "EUR"
+  },
+  "scope_summary": {
+    "rail": {
+      "scope_id": "rail",
+      "basis": "P. Packages - Rails On Site total row",
+      "budget": 47469217.82999998,
+      "change_order": 6939297.33107841,
+      "raw_change_order": null,
+      "forecast": 54408515.16107839,
+      "eac": 54408515.16107839,
+      "potential_exposure": 12443350.0,
+      "potential_forecast": 66851865.16107839,
+      "display_note": "Rails On Site total row from monthly cost report.",
+      "vowd": 32093295.549098052
+    },
+    "ponds": {
+      "scope_id": "ponds",
+      "basis": "P. BOD-BOP-019E split + Initial Budget for baseline budget",
+      "budget": 9132901.73,
+      "change_order": 1820110.5282476041,
+      "raw_change_order": 10953012.258247605,
+      "forecast": 10953012.258247605,
+      "eac": 10953012.258247605,
+      "potential_exposure": 10897281.0,
+      "potential_forecast": 21850293.258247606,
+      "display_note": "Ponds budget uses Initial Budget Ponds lines; forecast uses P. BOD-BOP-019E current position.",
+      "vowd": 6271076.384058176
+    },
+    "roads": {
+      "scope_id": "roads",
+      "basis": "P. BOD-BOP-019E split + Initial Budget for baseline budget",
+      "budget": 4743010.100000001,
+      "change_order": 8762427.648669738,
+      "raw_change_order": 13342603.74866974,
+      "forecast": 13505437.74866974,
+      "eac": 13505437.74866974,
+      "potential_exposure": 27543154.790404316,
+      "potential_forecast": 41048592.539074056,
+      "display_note": "Roads budget uses Initial Budget Roads lines; forecast uses P. BOD-BOP-019E current position and Rev.0 roads allocations for potential exposure.",
+      "vowd": 5645132.181528911
+    }
+  },
+  "packages_by_scope": {
+    "rail": [
+      {
+        "package": "BOD-BOP-007D",
+        "description": "Weighbridge + Radiation Detection (Rail)",
+        "supplier": "TBD",
+        "budget": 0.0,
+        "change_order": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 900000.0,
+        "potential_forecast": 900000.0,
+        "driver_note": 900000
+      },
+      {
+        "package": "BOD-BOP-001A",
+        "description": "Ground reinforcement",
+        "supplier": "GRK",
+        "budget": 14446490.499999998,
+        "change_order": 88341.00000000186,
+        "forecast": 14534831.5,
+        "potential_exposure": 0.0,
+        "potential_forecast": 14534831.5,
+        "driver_note": 88341.00000000186
+      },
+      {
+        "package": "BOD-BOP-001B",
+        "description": "Vegetation removal and GW - Transfer from SIN",
+        "supplier": "GRK",
+        "budget": 3962873.3,
+        "change_order": -450000.0,
+        "forecast": 3512873.3,
+        "potential_exposure": 0.0,
+        "potential_forecast": 3512873.3,
+        "driver_note": -450000
+      },
+      {
+        "package": "BOD-BOP-053",
+        "description": "Railway Infrastructure experts for Boden Corridor",
+        "supplier": "RAMBOLL",
+        "budget": 258070.23767293367,
+        "change_order": 42745.65448740689,
+        "forecast": 300815.89216034056,
+        "potential_exposure": 72721.0,
+        "potential_forecast": 373536.89216034056,
+        "driver_note": 115466.6544874069
+      },
+      {
+        "package": "BOD-BOP-054",
+        "description": "Substructure, Railway & Catenary",
+        "supplier": "GRK",
+        "budget": 28047970.382327054,
+        "change_order": 6592235.163355809,
+        "forecast": 34640205.54568286,
+        "potential_exposure": 11648303.0,
+        "potential_forecast": 46288508.54568286,
+        "driver_note": 18240538.16335581
+      },
+      {
+        "package": "BOD-BOP-061B",
+        "description": "Former SWECO Engineering commitment for ROS",
+        "supplier": "SWECO",
+        "budget": 753813.41,
+        "change_order": 45814.10848173115,
+        "forecast": 799627.5184817312,
+        "potential_exposure": 0.0,
+        "potential_forecast": 799627.5184817312,
+        "driver_note": 45814.10848173115
+      },
+      {
+        "package": "BOD-BOP-061F",
+        "description": "New SWECO Engineering commitment - ROS 2025",
+        "supplier": "SWECO",
+        "budget": 0.0,
+        "change_order": 620161.4047534587,
+        "forecast": 620161.4047534587,
+        "potential_exposure": 0.0,
+        "potential_forecast": 620161.4047534587,
+        "driver_note": 620161.4047534587
+      },
+      {
+        "package": "BOD-BOP-065",
+        "description": "Structural Building for Rail staff",
+        "supplier": "TBD",
+        "budget": 0.0,
+        "change_order": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 330000.0,
+        "potential_forecast": 330000.0,
+        "driver_note": 330000
+      },
+      {
+        "package": "BOD-BOP-ROS",
+        "description": "Undefined package",
+        "supplier": "-",
+        "budget": 0.0,
+        "change_order": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 392326.0,
+        "potential_forecast": 392326.0,
+        "driver_note": 392326
+      },
+      {
+        "package": "Rails On Site - Total",
+        "description": "",
+        "supplier": null,
+        "budget": 47469217.82999998,
+        "change_order": 6939297.33107841,
+        "forecast": 54408515.16107839,
+        "potential_exposure": 12443350.0,
+        "potential_forecast": 66851865.16107839,
+        "driver_note": 19382647.33107841
+      }
+    ],
+    "ponds": [],
+    "roads": []
+  },
+  "components_by_scope": {
+    "rail": [],
+    "ponds": [
+      {
+        "component": "Ponds and Culverts",
+        "row_label": "Ponds and Culverts",
+        "package": "BOD-BOP-019E",
+        "contracted_tg5": null,
+        "change_order_raw": 10953012.258247605,
+        "pending_changes": null,
+        "potential_changes": 10897281.0,
+        "grand_total": 21850293.258247606,
+        "allocation_note": "P. BOD-BOP-019E split table"
+      }
+    ],
+    "roads": [
+      {
+        "component": "Roads and ditches",
+        "row_label": "Roads and ditches",
+        "package": "BOD-BOP-019E",
+        "contracted_tg5": null,
+        "change_order_raw": 13342603.74866974,
+        "pending_changes": 162834.0,
+        "potential_changes": 6055703.0,
+        "grand_total": 19561140.74866974,
+        "allocation_note": "P. BOD-BOP-019E split table"
+      },
+      {
+        "component": "Roads allocation",
+        "row_label": "Roads",
+        "package": "BOD-BOP-019EA/EH",
+        "potential_changes": 5730220.39,
+        "grand_total": 5730220.39,
+        "allocation_note": "Rev.0 roads component allocation"
+      },
+      {
+        "component": "Roads allocation",
+        "row_label": "Roads",
+        "package": "BOD-BOP-019EA/EH",
+        "potential_changes": 15757231.400404315,
+        "grand_total": 15757231.400404315,
+        "allocation_note": "Rev.0 roads component allocation"
+      }
+    ]
+  },
+  "exposures_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "vowd_by_scope": {
+    "rail": 32093295.549098052,
+    "ponds": 6271076.384058176,
+    "roads": 5645132.181528911
+  }
+}
