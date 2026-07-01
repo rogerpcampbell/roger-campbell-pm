@@ -1,0 +1,7 @@
+Roger Campbell Rail / Ponds / Roads Control Center v34
+
+1. Unzip this package.
+2. Open this folder.
+3. Double-click RUN_APP_WINDOWS.bat.
+
+The first launch may take a few minutes while Windows creates the virtual environment and installs dependencies.

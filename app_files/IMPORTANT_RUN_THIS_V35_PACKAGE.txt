@@ -1,0 +1,3 @@
+﻿Run this corrected v35 package, not the old nested Downloads v29 folder.
+
+The current app includes the v37 first-paint layout fix: panels now start at the top, dropdowns are visible, and the internal Streamlit scroll position is reset after panel changes.
