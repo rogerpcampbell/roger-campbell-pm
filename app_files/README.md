@@ -7,6 +7,7 @@
 - Progress, action pressure, and cost exposure use separate single-axis charts so units and comparisons remain clear.
 - A data-freshness strip distinguishes the active weekly report, monthly cost report, and schedule baseline dates.
 - The six-week control pressure heatmap and all existing scope detail, action, cost, and milestone sections remain available.
+- Weekly controls now include the 2026 Week 27 report with a 04 Jul 2026 cut-off; prior weekly history remains selectable.
 
 Windows launch:
 

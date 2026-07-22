@@ -1,7 +1,7 @@
 ﻿{
     "package":  "Roger_Campbell_Rail_Ponds_Roads_Control_Center_v35",
     "updated":  "2026-07-22",
-    "active_internal_layer":  "v76 decision-first executive analytics with 2026 W26 report",
+    "active_internal_layer":  "v76 decision-first executive analytics with 2026 W27 report",
     "checks":  {
                    "style_only_streamlit_containers_collapsed":  true,
                    "internal_main_scroll_reset":  true,
@@ -90,6 +90,9 @@
                    "executive_action_pressure_single_axis":  true,
                    "executive_cost_exposure_single_axis":  true,
                    "executive_action_total_opens_copyable_list":  true,
-                   "executive_existing_scope_details_retained":  true
+                   "executive_existing_scope_details_retained":  true,
+                   "weekly_report_2026_w27_included":  true,
+                   "latest_week_starts_at_2026_w27":  true,
+                   "weekly_history_preserved_through_w27":  true
                }
 }
