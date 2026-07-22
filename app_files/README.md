@@ -1,4 +1,12 @@
-# Roger Campbell Rail / Ponds / Roads Control Center v34
+# Roger Campbell Rail / Ponds / Roads Control Center v35
+
+## Executive analytics update
+
+- The Overview starts with four concise management signals for progress, actions, potential exposure, and baseline slip.
+- Headline cards open the relevant scope or cost panel; the portfolio action card opens a copyable action list.
+- Progress, action pressure, and cost exposure use separate single-axis charts so units and comparisons remain clear.
+- A data-freshness strip distinguishes the active weekly report, monthly cost report, and schedule baseline dates.
+- The six-week control pressure heatmap and all existing scope detail, action, cost, and milestone sections remain available.
 
 Windows launch:
 

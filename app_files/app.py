@@ -26437,6 +26437,566 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
             _roger_force_rerun_v75()
 
 
+# -----------------------------------------------------------------------------
+# v76: decision-first executive analytics.
+# -----------------------------------------------------------------------------
+
+V76_EXECUTIVE_ANALYTICS_CSS = """
+<style>
+.decision-heading-v76{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin:4px 0 10px 0;
+}
+.decision-heading-v76 h2{
+  margin:0;
+  color:#101828;
+  font-size:1.12rem;
+  line-height:1.15;
+  letter-spacing:0;
+  font-weight:950;
+}
+.decision-heading-v76 span{
+  color:#667085;
+  font-size:.73rem;
+  line-height:1.2;
+  font-weight:750;
+  text-align:right;
+}
+.management-insights-grid-v76{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 10px 0;
+}
+.insight-card-v76,
+.insight-action-wrap-v76{
+  min-width:0;
+  min-height:112px;
+  border:1px solid #d7dce5;
+  border-left:4px solid var(--insight-accent,#2563eb);
+  border-radius:8px;
+  background:#ffffff;
+  box-shadow:0 6px 18px rgba(16,24,40,.06);
+  box-sizing:border-box;
+}
+.insight-card-v76{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:13px 34px 13px 14px;
+  color:#101828!important;
+  text-decoration:none!important;
+}
+.insight-action-wrap-v76{
+  padding:0;
+  overflow:visible;
+}
+.insight-action-wrap-v76 > .insight-card-v76{
+  width:100%;
+  min-height:110px;
+  border:0;
+  border-radius:4px;
+  box-shadow:none;
+  cursor:pointer;
+  text-align:left;
+  font:inherit;
+}
+.insight-card-v76:hover,
+.insight-card-v76:focus-visible{
+  background:#f8fafc;
+  border-color:#98a2b3;
+  outline:2px solid rgba(37,99,235,.16);
+  outline-offset:1px;
+}
+.insight-card-v76.critical,
+.insight-action-wrap-v76.critical{--insight-accent:#c73535;}
+.insight-card-v76.watch,
+.insight-action-wrap-v76.watch{--insight-accent:#d97706;}
+.insight-card-v76.controlled,
+.insight-action-wrap-v76.controlled{--insight-accent:#14805e;}
+.insight-label-v76{
+  display:block;
+  margin:0 0 5px 0;
+  color:#667085;
+  font-size:.64rem;
+  line-height:1.15;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:950;
+}
+.insight-value-v76{
+  display:block;
+  color:#101828;
+  font-size:1.55rem;
+  line-height:1;
+  letter-spacing:0;
+  font-weight:950;
+}
+.insight-note-v76{
+  display:block;
+  margin-top:7px;
+  color:#475467;
+  font-size:.73rem;
+  line-height:1.24;
+  font-weight:750;
+  overflow-wrap:anywhere;
+}
+.insight-arrow-v76{
+  position:absolute;
+  top:50%;
+  right:12px;
+  transform:translateY(-50%);
+  color:#667085;
+  font-size:1rem;
+  line-height:1;
+  font-weight:950;
+}
+.freshness-strip-v76{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:0 0 14px 0;
+  color:#475467;
+  font-size:.69rem;
+  line-height:1.2;
+  font-weight:800;
+}
+.freshness-label-v76{
+  color:#344054;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-size:.62rem;
+  font-weight:950;
+}
+.freshness-pill-v76{
+  display:inline-flex;
+  align-items:center;
+  min-height:25px;
+  padding:4px 8px;
+  border:1px solid #d7dce5;
+  border-radius:999px;
+  background:#ffffff;
+  color:#344054;
+  white-space:nowrap;
+}
+.freshness-pill-v76.current{border-color:#9ed8c2;background:#f0fbf6;color:#08704c;}
+.freshness-pill-v76.lag{border-color:#f1cc96;background:#fff8eb;color:#9a5400;}
+.decision-chart-heading-v76{
+  margin:0 0 2px 0;
+  color:#101828;
+  font-size:.93rem;
+  line-height:1.2;
+  font-weight:950;
+}
+.decision-chart-sub-v76{
+  margin:0;
+  color:#667085;
+  font-size:.68rem;
+  line-height:1.2;
+  font-weight:750;
+}
+.st-key-pm_progress_v76,
+.st-key-pm_actions_v76,
+.st-key-pm_heatmap_v76,
+.st-key-pm_cost_v76{
+  border:1px solid #dfe3ea;
+  border-radius:8px;
+  background:#ffffff;
+  padding:13px 13px 4px 13px;
+  box-shadow:0 6px 18px rgba(16,24,40,.05);
+  overflow:hidden;
+}
+.st-key-pm_progress_v76,
+.st-key-pm_actions_v76{min-height:340px;}
+.st-key-pm_heatmap_v76,
+.st-key-pm_cost_v76{min-height:330px;}
+@media(max-width:1180px){
+  .management-insights-grid-v76{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:760px){
+  .st-key-rc_panel_header_v27{
+    position:relative!important;
+    top:auto!important;
+    z-index:10!important;
+  }
+  div[data-testid="stLayoutWrapper"]:has(> .st-key-rc_panel_header_v27){
+    position:relative!important;
+    top:auto!important;
+    z-index:10!important;
+  }
+  .decision-heading-v76{align-items:flex-start;flex-direction:column;gap:4px;}
+  .decision-heading-v76 span{text-align:left;}
+  .management-insights-grid-v76{grid-template-columns:1fr;}
+  .insight-card-v76,.insight-action-wrap-v76{min-height:96px;}
+  .insight-action-wrap-v76 > .insight-card-v76{min-height:94px;}
+  .st-key-pm_progress_v76,
+  .st-key-pm_actions_v76,
+  .st-key-pm_heatmap_v76,
+  .st-key-pm_cost_v76{min-height:0;padding:11px 8px 2px 8px;}
+}
+</style>
+"""
+
+
+def _management_panel_href_v76(panel: str) -> str:
+    token = hashlib.sha1((panel + "management-v76").encode("utf-8", "ignore")).hexdigest()[:10]
+    return f"?panel={quote_plus(panel)}&nav={token}"
+
+
+def _insight_card_v76(label: str, value: str, note: str, panel: str, tone: str) -> str:
+    return (
+        f"<a class='insight-card-v76 {tone}' href='{_management_panel_href_v76(panel)}' target='_self'>"
+        f"<span class='insight-label-v76'>{_html(label)}</span>"
+        f"<strong class='insight-value-v76'>{_html(value)}</strong>"
+        f"<span class='insight-note-v76'>{_html(note)}</span>"
+        "<span class='insight-arrow-v76' aria-hidden='true'>&gt;</span></a>"
+    )
+
+
+def _active_baseline_label_v76() -> str:
+    labels = _baseline_labels_v36()
+    selected = str(st.session_state.get("baseline_choice") or "")
+    if selected in labels:
+        return selected
+    return labels[-1] if labels else "No baseline"
+
+
+def _baseline_date_label_v76(label: str) -> str:
+    match = re.search(r"(20\d{2})-(\d{2})-(\d{2})", str(label or ""))
+    if not match:
+        return str(label or "No baseline")
+    try:
+        return pd.Timestamp(match.group(0)).strftime("%d %b %Y")
+    except Exception:
+        return match.group(0)
+
+
+def _cost_month_timestamp_v76(label: str) -> Optional[pd.Timestamp]:
+    for fmt in ("%Y-%B", "%Y-%b", "%B %Y", "%b %Y"):
+        try:
+            return pd.Timestamp(pd.to_datetime(str(label), format=fmt))
+        except Exception:
+            continue
+    try:
+        value = pd.to_datetime(str(label), errors="coerce")
+        return None if pd.isna(value) else pd.Timestamp(value)
+    except Exception:
+        return None
+
+
+def _management_brief_v76(
+    assessments: List[Dict[str, Any]],
+    selected_year: int,
+    selected_week: int,
+    current_date: Optional[pd.Timestamp],
+) -> None:
+    if not assessments:
+        return
+    by_scope = {str(a.get("scope_id") or ""): a for a in assessments}
+    progress_scope = min(
+        assessments,
+        key=lambda a: _safe_float(a.get("construction_dev")) if _safe_float(a.get("construction_dev")) is not None else 999.0,
+    )
+    progress_dev = _safe_float(progress_scope.get("construction_dev"))
+    progress_tone = "critical" if progress_dev is not None and progress_dev < -4.0 else ("watch" if progress_dev is not None and progress_dev < 0 else "controlled")
+    progress_value = "N/A" if progress_dev is None else f"{progress_dev:+.2f}%"
+    if progress_dev is None:
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | No variance loaded"
+    elif progress_dev < -4.0:
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | {abs(progress_dev) - 4.0:.2f}% beyond 4% limit"
+    else:
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | Within 4% limit"
+
+    action_rows = [row for a in assessments for row in ((a.get("actions") or {}).get("rows") or [])]
+    attention_rows = _filter_action_rows_v32(action_rows, {"Delayed", "Near due"})
+    delayed_total = sum(int((a.get("actions") or {}).get("Delayed", 0)) for a in assessments)
+    near_total = sum(int((a.get("actions") or {}).get("Near due", 0)) for a in assessments)
+    action_scope = max(
+        assessments,
+        key=lambda a: int((a.get("actions") or {}).get("Delayed", 0)) + int((a.get("actions") or {}).get("Near due", 0)),
+    )
+    action_button_html = (
+        "<span class='insight-label-v76'>Action pressure</span>"
+        f"<strong class='insight-value-v76'>{delayed_total + near_total}</strong>"
+        f"<span class='insight-note-v76'>{delayed_total} delayed | {near_total} near due | {_html(action_scope.get('scope', 'Scope'))} highest</span>"
+        "<span class='insight-arrow-v76' aria-hidden='true'>&gt;</span>"
+    )
+    action_card = (
+        "<div class='insight-action-wrap-v76 critical'>"
+        + _popover_markup_v33("Portfolio actions requiring attention", attention_rows, action_button_html, "insight-card-v76 critical")
+        + "</div>"
+    )
+
+    exposure_values = [(_safe_float((a.get("cost") or {}).get("exposure")) or 0.0) for a in assessments]
+    total_exposure = sum(exposure_values)
+    total_potential = sum(
+        (_safe_float((a.get("cost") or {}).get("forecast")) or 0.0) + (_safe_float((a.get("cost") or {}).get("exposure")) or 0.0)
+        for a in assessments
+    )
+    cost_scope = max(assessments, key=lambda a: _safe_float((a.get("cost") or {}).get("exposure")) or 0.0)
+    cost_note = f"Potential FC {_fmt_money(total_potential)} | {cost_scope.get('scope', 'Scope')} largest"
+
+    baseline_scope = max(assessments, key=lambda a: int((a.get("baseline") or {}).get("max_delay", 0) or 0))
+    baseline_days = int((baseline_scope.get("baseline") or {}).get("max_delay", 0) or 0)
+    baseline_slipped = int((baseline_scope.get("baseline") or {}).get("slipped", 0) or 0)
+    baseline_tone = "critical" if baseline_days > 14 else ("watch" if baseline_days > 0 else "controlled")
+
+    cards = [
+        _insight_card_v76(
+            "Progress control",
+            progress_value,
+            progress_note,
+            SCOPE_PANEL_BY_ID.get(str(progress_scope.get("scope_id") or ""), "Executive overview"),
+            progress_tone,
+        ),
+        action_card,
+        _insight_card_v76(
+            "Potential exposure",
+            _fmt_money(total_exposure),
+            cost_note,
+            "Cost Status",
+            "critical" if total_exposure > 0 else "controlled",
+        ),
+        _insight_card_v76(
+            "Maximum baseline slip",
+            f"+{baseline_days}d",
+            f"{baseline_scope.get('scope', 'Scope')} | {baseline_slipped} slipped milestones",
+            SCOPE_PANEL_BY_ID.get(str(baseline_scope.get("scope_id") or ""), "Executive overview"),
+            baseline_tone,
+        ),
+    ]
+    period_text = f"{selected_year} W{int(selected_week):02d}"
+    cutoff_text = pd.Timestamp(current_date).strftime("%d %b %Y") if current_date is not None and not pd.isna(current_date) else period_text
+    cost_month = _active_month_label_v29()
+    cost_ts = _cost_month_timestamp_v76(cost_month)
+    cutoff_ts = pd.Timestamp(current_date) if current_date is not None and not pd.isna(current_date) else None
+    cost_is_lag = bool(cost_ts is not None and cutoff_ts is not None and cost_ts.to_period("M") < cutoff_ts.to_period("M"))
+    baseline_label = _active_baseline_label_v76()
+    baseline_date = _baseline_date_label_v76(baseline_label)
+    st.markdown(
+        "<div class='decision-heading-v76'><h2>Management brief</h2>"
+        f"<span>{_html(period_text)} decision view</span></div>"
+        "<div class='management-insights-grid-v76'>" + "".join(cards) + "</div>"
+        "<div class='freshness-strip-v76'><span class='freshness-label-v76'>Data as of</span>"
+        f"<span class='freshness-pill-v76 current'>Weekly: {_html(cutoff_text)}</span>"
+        f"<span class='freshness-pill-v76 {'lag' if cost_is_lag else 'current'}'>Cost: {_html(cost_month)}</span>"
+        f"<span class='freshness-pill-v76 lag'>Baseline: {_html(baseline_date)}</span></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _scope_chart_label_v76(scope: Any) -> str:
+    text = str(scope or "Scope")
+    return "Rail On Site" if text == "Rail On Site (ROS)" else text
+
+
+def _decision_figure_style_v76(fig: go.Figure, height: int = 275) -> go.Figure:
+    fig.update_layout(
+        height=height,
+        margin=dict(l=16, r=20, t=18, b=34),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Segoe UI, Arial, sans-serif", size=11, color="#344054"),
+        hoverlabel=dict(bgcolor="#101828", bordercolor="#101828", font=dict(color="#ffffff", size=11)),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=10)),
+    )
+    return fig
+
+
+def _progress_deviation_figure_v76(assessments: List[Dict[str, Any]]) -> go.Figure:
+    rows = []
+    for a in assessments:
+        dev = _safe_float(a.get("construction_dev"))
+        actual = _safe_float(a.get("construction_actual"))
+        forecast = (actual - dev) if actual is not None and dev is not None else None
+        rows.append({"scope": _scope_chart_label_v76(a.get("scope")), "dev": dev or 0.0, "actual": actual, "forecast": forecast})
+    rows.sort(key=lambda row: row["dev"], reverse=True)
+    values = [row["dev"] for row in rows]
+    colors = ["#c73535" if value < -4.0 else ("#d97706" if value < 0 else "#14805e") for value in values]
+    custom = [["N/A" if row["actual"] is None else f"{row['actual']:.2f}%", "N/A" if row["forecast"] is None else f"{row['forecast']:.2f}%"] for row in rows]
+    fig = go.Figure(go.Bar(
+        x=values,
+        y=[row["scope"] for row in rows],
+        orientation="h",
+        marker_color=colors,
+        width=.54,
+        text=[f"{value:+.2f}%" for value in values],
+        textposition="outside",
+        cliponaxis=False,
+        customdata=custom,
+        hovertemplate="<b>%{y}</b><br>Actual %{customdata[0]}<br>Forecast %{customdata[1]}<br>Deviation %{x:+.2f}%<extra></extra>",
+    ))
+    min_x = min(values + [-4.0])
+    max_x = max(values + [0.0])
+    fig.add_vline(x=0, line_width=1.2, line_color="#667085")
+    fig.add_vline(x=-4.0, line_width=1.5, line_dash="dash", line_color="#c73535")
+    fig.add_annotation(x=-4.0, y=1.03, yref="paper", text="4% limit", showarrow=False, font=dict(size=10, color="#9b1c1c"))
+    fig.update_xaxes(
+        title="Deviation vs forecast",
+        ticksuffix="%",
+        range=[min(-7.0, min_x - 1.0), max(1.0, max_x + 1.0)],
+        gridcolor="#eef1f5",
+        zeroline=False,
+    )
+    fig.update_yaxes(showgrid=False, automargin=True)
+    return _decision_figure_style_v76(fig)
+
+
+def _actions_figure_v76(assessments: List[Dict[str, Any]]) -> go.Figure:
+    rows = []
+    for a in assessments:
+        actions = a.get("actions") or {}
+        delayed = int(actions.get("Delayed", 0) or 0)
+        near = int(actions.get("Near due", 0) or 0)
+        rows.append({"scope": _scope_chart_label_v76(a.get("scope")), "delayed": delayed, "near": near, "total": delayed + near})
+    rows.sort(key=lambda row: row["total"])
+    custom = [[row["total"]] for row in rows]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Delayed",
+        x=[row["delayed"] for row in rows],
+        y=[row["scope"] for row in rows],
+        orientation="h",
+        marker_color="#c73535",
+        text=[str(row["delayed"]) if row["delayed"] else "" for row in rows],
+        textposition="inside",
+        insidetextanchor="middle",
+        customdata=custom,
+        hovertemplate="<b>%{y}</b><br>Delayed %{x}<br>Total %{customdata[0]}<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        name="Near due",
+        x=[row["near"] for row in rows],
+        y=[row["scope"] for row in rows],
+        orientation="h",
+        marker_color="#d97706",
+        text=[str(row["near"]) if row["near"] else "" for row in rows],
+        textposition="inside",
+        insidetextanchor="middle",
+        customdata=custom,
+        hovertemplate="<b>%{y}</b><br>Near due %{x}<br>Total %{customdata[0]}<extra></extra>",
+    ))
+    fig.update_layout(barmode="stack")
+    fig.update_xaxes(title="Action count", rangemode="tozero", dtick=5, gridcolor="#eef1f5", zeroline=False)
+    fig.update_yaxes(showgrid=False, automargin=True)
+    return _decision_figure_style_v76(fig)
+
+
+def _cost_exposure_figure_v76(assessments: List[Dict[str, Any]]) -> go.Figure:
+    rows = []
+    for a in assessments:
+        cost = a.get("cost") or {}
+        forecast = (_safe_float(cost.get("forecast")) or 0.0) / 1_000_000.0
+        exposure = (_safe_float(cost.get("exposure")) or 0.0) / 1_000_000.0
+        rows.append({"scope": _scope_chart_label_v76(a.get("scope")), "forecast": forecast, "exposure": exposure, "potential": forecast + exposure})
+    rows.sort(key=lambda row: row["potential"])
+    custom = [[row["potential"]] for row in rows]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Forecast",
+        x=[row["forecast"] for row in rows],
+        y=[row["scope"] for row in rows],
+        orientation="h",
+        marker_color="#2563eb",
+        text=[f"EUR {row['forecast']:.1f}m" if row["forecast"] >= 20.0 else "" for row in rows],
+        textposition="inside",
+        textangle=0,
+        insidetextanchor="middle",
+        customdata=custom,
+        hovertemplate="<b>%{y}</b><br>Forecast EUR %{x:.1f}m<br>Potential FC EUR %{customdata[0]:.1f}m<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        name="Potential exposure",
+        x=[row["exposure"] for row in rows],
+        y=[row["scope"] for row in rows],
+        orientation="h",
+        marker_color="#d97706",
+        text=[f"+{row['exposure']:.1f}m" if row["exposure"] >= 15.0 else "" for row in rows],
+        textposition="inside",
+        textangle=0,
+        insidetextanchor="middle",
+        customdata=custom,
+        hovertemplate="<b>%{y}</b><br>Exposure EUR %{x:.1f}m<br>Potential FC EUR %{customdata[0]:.1f}m<extra></extra>",
+    ))
+    for idx, row in enumerate(rows):
+        fig.add_annotation(x=row["potential"], y=idx, text=f"EUR {row['potential']:.1f}m", showarrow=False, xanchor="left", xshift=7, font=dict(size=10, color="#344054"))
+    fig.update_layout(barmode="stack", legend_traceorder="normal")
+    fig.update_xaxes(title="EUR millions", rangemode="tozero", gridcolor="#eef1f5", zeroline=False)
+    fig.update_yaxes(showgrid=False, automargin=True)
+    return _decision_figure_style_v76(fig)
+
+
+def _chart_header_v76(title: str, subtitle: str) -> None:
+    st.markdown(
+        f"<div class='decision-chart-heading-v76'>{_html(title)}</div>"
+        f"<div class='decision-chart-sub-v76'>{_html(subtitle)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _plot_decision_chart_v76(fig: go.Figure, key: str) -> None:
+    st.plotly_chart(
+        fig,
+        width="stretch",
+        key=key,
+        config={"displayModeBar": False, "responsive": True, "scrollZoom": False},
+    )
+
+
+def render_pm_visuals(records: List[Dict[str, Any]], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> None:
+    order = {"rail": 0, "ponds": 1, "roads": 2}
+    assessments = [_pm_scope_assessment(r, selected_year, selected_week, current_date) for r in records if r.get("scope_id") in order]
+    assessments = sorted(assessments, key=lambda a: order.get(str(a.get("scope_id")), 99))
+    if not assessments:
+        return
+    st.markdown(V76_EXECUTIVE_ANALYTICS_CSS, unsafe_allow_html=True)
+    _management_brief_v76(assessments, selected_year, selected_week, current_date)
+    st.markdown(
+        "<div class='decision-heading-v76'><h2>Decision visuals</h2>"
+        "<span>Exceptions, workload and financial exposure</span></div>",
+        unsafe_allow_html=True,
+    )
+    left, right = st.columns(2, gap="medium")
+    with left:
+        try:
+            progress_box = st.container(key="pm_progress_v76")
+        except TypeError:
+            progress_box = st.container()
+        with progress_box:
+            _chart_header_v76("Construction deviation vs forecast", "4% management limit")
+            _plot_decision_chart_v76(_progress_deviation_figure_v76(assessments), "pm_progress_chart_v76")
+    with right:
+        try:
+            actions_box = st.container(key="pm_actions_v76")
+        except TypeError:
+            actions_box = st.container()
+        with actions_box:
+            _chart_header_v76("Actions requiring attention", "Delayed and near due")
+            _plot_decision_chart_v76(_actions_figure_v76(assessments), "pm_actions_chart_v76")
+    left, right = st.columns(2, gap="medium")
+    with left:
+        try:
+            heatmap_box = st.container(key="pm_heatmap_v76")
+        except TypeError:
+            heatmap_box = st.container()
+        with heatmap_box:
+            _chart_header_v76("Control pressure by scope", f"Last 6 weeks through W{int(selected_week):02d}")
+            _plot_decision_chart_v76(_pm_heatmap_figure_v55(assessments, selected_year, selected_week, current_date), "pm_heatmap_chart_v76")
+    with right:
+        try:
+            cost_box = st.container(key="pm_cost_v76")
+        except TypeError:
+            cost_box = st.container()
+        with cost_box:
+            _chart_header_v76("Forecast plus potential exposure", f"{_active_month_label_v29()} | EUR millions")
+            _plot_decision_chart_v76(_cost_exposure_figure_v76(assessments), "pm_cost_chart_v76")
+
+
 def main() -> None:
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
