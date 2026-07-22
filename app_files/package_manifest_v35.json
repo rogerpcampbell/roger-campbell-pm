@@ -1,7 +1,7 @@
 ﻿{
     "package":  "Roger_Campbell_Rail_Ponds_Roads_Control_Center_v35",
-    "updated":  "2026-07-01",
-    "active_internal_layer":  "v75 Roger all-data lookup and immediate scrollable chat render",
+    "updated":  "2026-07-22",
+    "active_internal_layer":  "v75 Roger all-data lookup with 2026 W26 report",
     "checks":  {
                    "style_only_streamlit_containers_collapsed":  true,
                    "internal_main_scroll_reset":  true,
@@ -20,6 +20,9 @@
                    "sidebar_branding_roger_campbell_pm":  true,
                    "weekly_report_2026_w25_included":  true,
                    "latest_week_starts_at_2026_w25":  true,
+                   "weekly_report_2026_w26_included":  true,
+                   "latest_week_starts_at_2026_w26":  true,
+                   "roger_weekly_report_full_text_search":  true,
                    "dropdown_menus_visible_above_sticky_header":  true,
                    "dropdown_options_selectable":  true,
                    "cost_status_view_buttons_active_style":  true,

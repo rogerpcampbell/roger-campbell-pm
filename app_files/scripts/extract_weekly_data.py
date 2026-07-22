@@ -308,13 +308,44 @@ def parse_waypoints(text, fname):
     if m: week=int(m.group(1))
     # Target main block 6-month key waypoints around Overall Progress
     # We'll scrape all lines containing dates in Key Waypoints blocks but limit to known labels.
-    known=['Piping Connections - Priority 1 Finish','P1 – Pipebridge Installed + Piping Connections Finish','Raw Water Supply','Temporary Power','Power Supply from NPB-511 to ASP','P2 – Pipebridge','P5 – Pipebridge','P4 – Pipebridge','Route 1 UG pipe completion','RW/FF Pumps area','Start Electrical Works']
+    known=[
+        'Temporary Water (Ready to Supply)',
+        'Temporary Power (Ready to Operate)',
+        'Temporary Power',
+        'Power Supply from NPB-511 to ASP',
+        'Piping Connections - Priority 1 Finish',
+        'P1 – Pipebridge Installed + Piping Connections Finish',
+        'P2 – Pipebridge Installed + Piping Connections Finish',
+        'P5 – Pipebridge Installed + Piping Connections Finish',
+        'P4 – Pipebridge Installed + Piping Connections Finish',
+        'P2 – Pipebridge',
+        'P5 – Pipebridge',
+        'P4 – Pipebridge',
+        'Priority 1 UG piping installation completion',
+        'Route 1 UG pipe completion',
+        'RW/FF Pumps area UG piping works Start',
+        'RW/FF Pumps area',
+        'Electrical Works by STS Start',
+        'Start Electrical Works',
+        'East water pond 1,2 & 3 start',
+        'East water pond 1, 2 & 3 start',
+        'Railway Groundworks Crossings Start',
+        'Raw Water Supply',
+    ]
     # Collapse blocks preserving lines
     for label in known:
         pat=re.escape(label).replace('\\–','[–-]').replace('\\-','[-–]')
         mm=re.search(pat+r'.{0,120}?([0-9]{1,2}\s+[A-Za-z]{3,9}\s+\d{4})\s+([0-9]{1,2}\s+[A-Za-z]{3,9}\s+\d{4}|TBC)', text, re.I|re.S)
         if mm:
-            rows.append({'week':week,'file_name':fname,'area':'Overall','waypoint':label,'planned_date':mm.group(1),'forecast_date':mm.group(2)})
+            planned, forecast = mm.group(1), mm.group(2)
+            duplicate = any(
+                r['planned_date'] == planned
+                and r['forecast_date'] == forecast
+                and (label in r['waypoint'] or r['waypoint'] in label)
+                for r in rows
+            )
+            if not duplicate:
+                rows.append({'week':week,'file_name':fname,'area':'Overall','waypoint':label,'planned_date':planned,'forecast_date':forecast})
     return rows
 
 # Extract latest area statuses and watchlist from W24 (or latest available)
@@ -332,7 +363,7 @@ def parse_area_statuses(text, fname):
     section_defs=[
         ('Rail', r'BOP \| Railways Management.*?(?=\n\s*BOP \| Roads|\Z)'),
         ('Roads', r'BOP \| Roads & Ditches Management.*?(?=\n\s*BOP \| Ponds|\Z)'),
-        ('Ponds', r'BOP \| Ponds Management.*?(?=\n\s*1\. Achievement|\Z)'),
+        ('Ponds', r'BOP \| Ponds Management.*?(?=\n\s*BOP \| (?!Ponds)|\Z)'),
         ('NPB/Buildings', r'BOP \| Buildings & Other IDOM.*?(?=\n\s*BOP \| Engineering|\Z)'),
     ]
     for area, pat in section_defs:
@@ -344,7 +375,7 @@ def parse_area_statuses(text, fname):
         if am: actual=to_float(am.group(1))
         fm=re.search(r'Forecast progress:\s*([0-9]+[,.][0-9]+)%', block, re.I)
         if fm: forecast=to_float(fm.group(1))
-        dm=re.search(r'Deviation[: ]\s*([-]?[0-9]+[,.][0-9]+)%', block, re.I)
+        dm=re.search(r'Deviation[: ]\s*([-]?[0-9]+(?:[,.][0-9]+)?)%', block, re.I)
         if dm: deviation=to_float(dm.group(1))
         # Area status row as issue
         if actual is not None:
@@ -514,8 +545,9 @@ def parse_engineering_scope_history(text, fname):
         22: {'rail': (99.43, 'ETC 15 Apr 2026 / complete'), 'ponds': (98.50, 'ETC late June 2026'), 'roads': (89.62, 'ETC July 2026')},
         23: {'rail': (99.43, 'ETC 15 Apr 2026 / complete'), 'ponds': (98.50, 'ETC late June 2026'), 'roads': (89.62, 'ETC July 2026')},
         24: {'rail': (99.43, 'ETC 15 Apr 2026 / complete'), 'ponds': (98.50, 'ETC late June 2026'), 'roads': (89.62, 'ETC July 2026')},
+        26: {'rail': (99.43, '100% ROS Sig'), 'ponds': (98.50, '1.50% remaining'), 'roads': (89.62, '10.38% remaining')},
     }
-    page_by_week = {16: 26, 17: 26, 18: 28, 19: 27, 20: 24, 21: 24, 22: 23, 23: 23, 24: 23}
+    page_by_week = {16: 26, 17: 26, 18: 28, 19: 27, 20: 24, 21: 24, 22: 23, 23: 23, 24: 23, 26: 22}
     names = {'rail': 'Rail', 'ponds': 'Ponds', 'roads': 'Roads'}
     rows = []
     if week in known:
@@ -607,7 +639,25 @@ risks_summary=sorted(risks_summary, key=lambda r:(r['week'] or 999))
 risks=sorted(risks, key=lambda r: (-(r.get('current_score') or 0), r['risk_id']))
 all_watch=sorted(all_watch, key=lambda r: (r['week'] or 0, r['area'], {'High':0,'Medium':1,'Info':2}.get(r['severity'],3)), reverse=True)
 
-bundle={'hse':hse,'schedule':schedules,'waypoints':waypoints,'risks_summary':risks_summary,'risks':risks,'watchlist':all_watch,'engineering_scope_history':engineering_scope_history,'ugp_distribution_history':ugp_distribution_history,'source_files':[{'file_name':f.name,'suffix':f.suffix,'text_chars':len(texts[f.name])} for f in files]}
+bundle={
+    'hse':hse,
+    'schedule':schedules,
+    'waypoints':waypoints,
+    'risks_summary':risks_summary,
+    'risks':risks,
+    'watchlist':all_watch,
+    'engineering_scope_history':engineering_scope_history,
+    'ugp_distribution_history':ugp_distribution_history,
+    'source_files':[
+        {
+            'file_name':f.name,
+            'suffix':f.suffix,
+            'text_chars':len(texts[f.name]),
+            'extracted_text':texts[f.name],
+        }
+        for f in files
+    ],
+}
 Path(os.environ.get('BOP_BUNDLE_PATH', str(DATA_DIR/'weekly_data_bundle.json'))).write_text(json.dumps(bundle, ensure_ascii=False, indent=2), encoding='utf-8')
 print(json.dumps({'hse_rows':len(hse),'schedules':len(schedules),'waypoints':len(waypoints),'risks_summary':len(risks_summary),'risks':len(risks),'watchlist':len(all_watch),'latest_week':latest_week,'ugp_distribution_history':len(ugp_distribution_history)}, indent=2))
 # Print sample latest HSE and schedule

@@ -11,25 +11,27 @@ Latest UX correction - cost charts and floating panel title
 
 Latest data inclusion
 - Added BOD-SIN-OVE-PMG-REPGE-11094 Weekly Progress Report BOP-IDOM-Week 25 2026.pdf.
-- The app now starts from latest weekly data: 2026 W25.
-- Week 25 added 1 HSE row, 1 schedule row, 7 waypoints, 1 risk summary row, 6 risk rows, and 114 watchlist/action rows.
+- Added BOD-SIN-OVE-PMG-REPGE-11095 Weekly Progress Report BOP-IDOM-Week 26 2026.pdf.
+- The app now starts from latest weekly data: 2026 W26.
+- Week 26 added 1 HSE row, 1 schedule row, 12 waypoints, 1 risk summary row, 6 risk rows, 127 watchlist/action rows, and 3 scope engineering rows.
+- Roger can search the complete extracted Week 26 report text as well as the structured dashboard data.
 - The source PDF is included in sources/ for traceability.
 
 Latest dropdown correction
 - Fixed Streamlit dropdown menus appearing behind the sticky header/cards.
 - Raised both the BaseWeb dropdown menu and its Streamlit portal wrapper to the top layer.
 - Verified Cost Status Month, View, and Baseline menus are visible and selectable.
-- Verified Executive Week, Month, and Baseline menus are visible; the long Week list scrolls to 2026 W25.
+- Verified Executive Week, Month, and Baseline menus are visible; the long Week list scrolls to 2026 W26.
 
 Live checks completed
 - Executive opened at the top with the active panel title visible.
 - Sidebar shows Roger Campbell PM.
 - Cost waterfall check confirms Budget, CO, Forecast, Exposure, Potential FC, negative VOWD, and ETC.
 - ETC check confirms ETC = Forecast + VOWD movement.
-- Weekly bundle check confirms latest period is 2026 W25 with 21 source reports.
+- Weekly bundle check confirms latest period is 2026 W26 with 22 source reports.
 - Dropdown check confirms Month can change 2026-May -> 2026-April -> 2026-May.
 - Dropdown check confirms View can change All scopes -> Ponds -> All scopes.
-- Dropdown check confirms Week can be restored to 2026 W25 from the long list.
+- Dropdown check confirms Week can be restored to 2026 W26 from the long list.
 - Cost click history check confirms SVG bar charts for amount and percent views.
 - App syntax check completed successfully.
 

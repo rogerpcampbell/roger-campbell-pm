@@ -26007,8 +26007,16 @@ def _roger_walk_text_v75(obj: Any, path: str = "", depth: int = 0) -> Iterable[T
     if obj is None:
         return
     text = " ".join(str(obj).replace("\r", " ").replace("\n", " ").split())
-    if len(text) >= 3:
+    if len(text) < 3:
+        return
+    if len(text) <= 360:
         yield path, text
+        return
+    step = 300
+    for start in range(0, len(text), step):
+        chunk = text[start:start + 360].strip()
+        if len(chunk) >= 3:
+            yield f"{path}#chunk-{start // step + 1}", chunk
 
 
 def _roger_data_sources_v75(bundle: Dict[str, Any], profiles: Dict[str, Any]) -> List[Tuple[str, Any]]:
@@ -26083,6 +26091,8 @@ def _roger_collect_data_hits_v75(question: str, bundle: Dict[str, Any], profiles
         return []
     scored: List[Tuple[int, Dict[str, str]]] = []
     requested_scope_terms = [term for term in terms if term in {"rail", "ros", "ponds", "roads"}]
+    phrase_terms = [term for term in terms if not term.isdigit() and term not in {"week", "weeks"}]
+    phrase = " ".join(phrase_terms)
     for entry in _roger_data_index_v75(bundle, profiles):
         search_text = entry.get("search", "")
         path_text = entry.get("path", "").lower()
@@ -26090,11 +26100,18 @@ def _roger_collect_data_hits_v75(question: str, bundle: Dict[str, Any], profiles
         if requested_scope_terms and not any(term in search_text for term in requested_scope_terms):
             continue
         score = 0
+        matched_terms = set()
         for term in terms:
             if term in value_text:
+                matched_terms.add(term)
                 score += min(12, value_text.count(term) * 4)
             if term in path_text:
                 score += 2
+        score += len(matched_terms) * 10
+        if len(matched_terms) == len(terms):
+            score += 30
+        if len(phrase_terms) >= 2 and phrase in value_text:
+            score += 60
         if "driver" in terms and any(marker in path_text for marker in ["driver", "note", "description"]):
             score += 5
         if not any(term in value_text for term in terms) and re.fullmatch(r"[\s0-9,.\-+%EUReur€]+", entry.get("text", "")):
