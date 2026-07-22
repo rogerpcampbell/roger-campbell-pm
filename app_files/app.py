@@ -340,7 +340,7 @@ def logo_data_uri() -> str:
 
 
 @st.cache_data(show_spinner=False)
-def cached_bundle() -> Dict[str, Any]:
+def cached_bundle(data_version: int = 0) -> Dict[str, Any]:
     return load_bundle(DATA_PATH)
 
 
@@ -7662,7 +7662,7 @@ def _baseline_reports() -> List[Dict[str, Any]]:
 def main() -> None:
     render_loading_overlay()
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     panel_choice, selected_year, selected_week = render_sidebar(st.session_state["bundle"])
     view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
@@ -12152,7 +12152,7 @@ def render_sidebar(bundle: Dict[str, Any]) -> Tuple[str, int, int]:
 def main() -> None:
     render_loading_overlay()
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     panel_choice, selected_year, selected_week = render_sidebar(st.session_state["bundle"])
     view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
@@ -13478,7 +13478,7 @@ def render_sidebar(bundle: Dict[str, Any]) -> Tuple[str, int, int]:
 def main() -> None:
     render_loading_overlay()
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     panel_choice, selected_year, selected_week = render_sidebar(st.session_state["bundle"])
     view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
@@ -15677,7 +15677,7 @@ def render_cost_panel(bundle: Dict[str, Any], profiles: Dict[str, Any], selected
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     selected_year, selected_week = render_top_control_center(st.session_state["bundle"])
     panel_choice = render_sidebar(st.session_state["bundle"])
@@ -16393,7 +16393,7 @@ def render_scope_sections(rec: Dict[str, Any], selected_year: int, selected_week
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     _selector_defaults_v26(st.session_state["bundle"])
     panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])
@@ -17142,7 +17142,7 @@ def render_executive_overview(bundle: Dict[str, Any], profiles: Dict[str, Any], 
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     _selector_defaults_v27(st.session_state["bundle"])
     panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])
@@ -19990,7 +19990,7 @@ def _reset_main_scroll_v37() -> None:
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     _selector_defaults_v27(st.session_state["bundle"])
     panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])
@@ -23083,7 +23083,7 @@ def _render_cost_scope_buttons_v40() -> None:
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     _latest_defaults_v32(st.session_state["bundle"])
     panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])
@@ -23264,7 +23264,7 @@ def _pm_heatmap_detail_v55(a: Dict[str, Any], metric: str) -> str:
 
 
 def _pm_heatmap_history_v55(selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> Dict[Tuple[str, str], List[Tuple[str, float, str]]]:
-    bundle = st.session_state.get("bundle") or cached_bundle()
+    bundle = st.session_state.get("bundle") or cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     periods = available_periods(bundle)
     if not periods:
@@ -26439,7 +26439,7 @@ def render_roger_assistant(bundle: Dict[str, Any], profiles: Dict[str, Any], sel
 
 def main() -> None:
     if "bundle" not in st.session_state:
-        st.session_state["bundle"] = cached_bundle()
+        st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
     _latest_defaults_v32(st.session_state["bundle"])
     panel_choice, _sy, _sw = render_sidebar(st.session_state["bundle"])

@@ -13,6 +13,7 @@ Latest data inclusion
 - Added BOD-SIN-OVE-PMG-REPGE-11094 Weekly Progress Report BOP-IDOM-Week 25 2026.pdf.
 - Added BOD-SIN-OVE-PMG-REPGE-11095 Weekly Progress Report BOP-IDOM-Week 26 2026.pdf.
 - The app now starts from latest weekly data: 2026 W26.
+- Streamlit now invalidates the weekly-data cache whenever the published bundle changes.
 - Week 26 added 1 HSE row, 1 schedule row, 12 waypoints, 1 risk summary row, 6 risk rows, 127 watchlist/action rows, and 3 scope engineering rows.
 - Roger can search the complete extracted Week 26 report text as well as the structured dashboard data.
 - The source PDF is included in sources/ for traceability.

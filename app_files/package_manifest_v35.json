@@ -22,6 +22,7 @@
                    "latest_week_starts_at_2026_w25":  true,
                    "weekly_report_2026_w26_included":  true,
                    "latest_week_starts_at_2026_w26":  true,
+                   "weekly_bundle_cache_tracks_file_updates":  true,
                    "roger_weekly_report_full_text_search":  true,
                    "dropdown_menus_visible_above_sticky_header":  true,
                    "dropdown_options_selectable":  true,
