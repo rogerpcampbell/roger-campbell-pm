@@ -24028,19 +24028,22 @@ def _latest_defaults_v32(bundle: Dict[str, Any]) -> None:
     preserved_week = st.session_state.pop("_preserve_week_after_cost_scope_v54", None)
     if week_labels:
         latest_week = week_labels[-1]
-        chosen_week = next(
-            (
-                value
-                for value in (
-                    preserved_week,
-                    st.session_state.get("week_selector_value"),
-                    st.session_state.get(ACTIVE_WEEK_KEY_V63),
-                    st.session_state.get("_manual_week_choice_v55"),
-                )
-                if value in week_labels
-            ),
-            latest_week,
-        )
+        if st.session_state.get("_latest_week_applied_v32") != latest_week:
+            chosen_week = latest_week
+        else:
+            chosen_week = next(
+                (
+                    value
+                    for value in (
+                        preserved_week,
+                        st.session_state.get("week_selector_value"),
+                        st.session_state.get(ACTIVE_WEEK_KEY_V63),
+                        st.session_state.get("_manual_week_choice_v55"),
+                    )
+                    if value in week_labels
+                ),
+                latest_week,
+            )
         st.session_state[ACTIVE_WEEK_KEY_V63] = chosen_week
         st.session_state["_manual_week_choice_v55"] = chosen_week
         _set_state_value_v59("week_selector_value", chosen_week)
@@ -24051,12 +24054,14 @@ def _latest_defaults_v32(bundle: Dict[str, Any]) -> None:
     if cost_labels:
         latest_month = cost_labels[-1]
         current_month = st.session_state.get("monthly_cost_report_choice_portfolio")
-        if preserved_month in cost_labels:
+        if st.session_state.get("_latest_month_applied_v32") != latest_month:
+            if _set_state_value_v59("monthly_cost_report_choice_portfolio", latest_month):
+                st.session_state["_latest_month_applied_v32"] = latest_month
+        elif preserved_month in cost_labels:
             if _set_state_value_v59("monthly_cost_report_choice_portfolio", preserved_month):
                 st.session_state["_latest_month_applied_v32"] = latest_month
         elif current_month in cost_labels:
-            if st.session_state.get("_latest_month_applied_v32") != latest_month:
-                st.session_state["_latest_month_applied_v32"] = latest_month
+            st.session_state["_latest_month_applied_v32"] = latest_month
         else:
             if _set_state_value_v59("monthly_cost_report_choice_portfolio", latest_month):
                 st.session_state["_latest_month_applied_v32"] = latest_month
