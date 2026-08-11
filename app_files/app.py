@@ -27129,8 +27129,31 @@ def _pm_heatmap_figure_v55(assessments: List[Dict[str, Any]], selected_year: int
     return fig
 
 
+def _cost_source_revision_v79() -> str:
+    paths = list(MONTHLY_COST_DIR.glob("*.json")) if MONTHLY_COST_DIR.exists() else []
+    if MONTHLY_COST_PATH.exists():
+        paths.append(MONTHLY_COST_PATH)
+    parts = []
+    for path in sorted(paths, key=lambda item: str(item).lower()):
+        try:
+            stat = path.stat()
+            parts.append(f"{path.name}:{stat.st_size}:{stat.st_mtime_ns}")
+        except OSError:
+            continue
+    return hashlib.sha1("|".join(parts).encode("utf-8", "ignore")).hexdigest()
+
+
+def _ensure_cost_cache_current_v79() -> None:
+    revision = _cost_source_revision_v79()
+    if st.session_state.get("_cost_source_revision_v79") == revision:
+        return
+    cached_monthly_cost_reports.clear()
+    st.session_state["_cost_source_revision_v79"] = revision
+
+
 def main() -> None:
     st.markdown(V78_LAYER_CSS, unsafe_allow_html=True)
+    _ensure_cost_cache_current_v79()
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
