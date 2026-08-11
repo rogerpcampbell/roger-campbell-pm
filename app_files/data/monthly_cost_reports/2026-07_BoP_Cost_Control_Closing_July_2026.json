@@ -1,0 +1,559 @@
+{
+  "metadata": {
+    "report_name": "BoP_Cost Control_Closing July 2026",
+    "source_file": "BoP_Cost Control_Closing July 2026.xlsx",
+    "cutoff_month": "2026-07",
+    "active_date": "2026-07",
+    "data_date": "2026-07-31",
+    "currency": "EUR",
+    "normalization_version": "2026-08-schema-aware-v1",
+    "quality_note": "Rail is sourced from the dated package summary. Ponds and Roads use the current commitment and O&V registers; their approved scope budgets are carried forward because the redesigned workbook does not expose that split."
+  },
+  "scope_summary": {
+    "rail": {
+      "scope_id": "rail",
+      "basis": "Budget per Package - Rails On Site Total",
+      "budget": 55019726.0,
+      "change_order": 5344188.619999997,
+      "forecast": 60363914.62,
+      "eac": 60363914.62,
+      "potential_exposure": 9460620.0,
+      "potential_forecast": 69824534.62,
+      "vowd": 31661660.209098052,
+      "display_note": "Current Rail total from the dated Budget per Package control row."
+    },
+    "ponds": {
+      "scope_id": "ponds",
+      "basis": "Commitment tracker + O&V Register - Ponds and Culverts",
+      "budget": 9132901.73,
+      "change_order": 6034815.201232528,
+      "forecast": 15167716.931232529,
+      "eac": 15167716.931232529,
+      "pending_changes": 649992.0,
+      "potential_exposure": 1583086.0,
+      "potential_forecast": 16750802.931232529,
+      "vowd": 6288635.802291593,
+      "display_note": "Forecast uses committed value plus pending changes; potential exposure uses the active O&V Register. Budget is carried from the approved scope baseline because the current workbook does not publish a scope-level budget split."
+    },
+    "roads": {
+      "scope_id": "roads",
+      "basis": "Commitment tracker + O&V Register - Roads and ditches",
+      "budget": 4743010.100000001,
+      "change_order": 12887486.648669742,
+      "forecast": 17630496.748669744,
+      "eac": 17630496.748669744,
+      "pending_changes": 4287893.0,
+      "potential_exposure": 36682470.0,
+      "potential_forecast": 54312966.74866974,
+      "vowd": 5790654.52987939,
+      "display_note": "Forecast uses committed value plus pending changes; potential exposure uses the active O&V Register. Budget is carried from the approved scope baseline because the current workbook does not publish a scope-level budget split."
+    }
+  },
+  "packages_by_scope": {
+    "rail": [
+      {
+        "package": "BOD-BOP-001A",
+        "description": "Ground reinforcement",
+        "supplier": "GRK",
+        "phase": "Phase 1A",
+        "budget": 14534832.0,
+        "forecast": 14534832.0,
+        "potential_exposure": 0.0,
+        "potential_forecast": 14534832.0,
+        "vowd": 13246119.26,
+        "change_order": 0.0
+      },
+      {
+        "package": "BOD-BOP-001B",
+        "description": "Vegetation removal and GW - Transfer from SIN",
+        "supplier": "GRK",
+        "phase": "Phase 1A",
+        "budget": 3512873.0,
+        "forecast": 3512873.0,
+        "potential_exposure": 0.0,
+        "potential_forecast": 3512873.0,
+        "vowd": 3512873.3,
+        "change_order": 0.0
+      },
+      {
+        "package": "BOD-BOP-007D",
+        "description": "Weighbridge + Radiation Detection (Rail)",
+        "supplier": "TBD",
+        "phase": "Phase 1A",
+        "budget": 0.0,
+        "forecast": 620000.0,
+        "potential_exposure": 0.0,
+        "potential_forecast": 620000.0,
+        "vowd": 0.0,
+        "change_order": 620000.0
+      },
+      {
+        "package": "BOD-BOP-053",
+        "description": "Railway Infrastructure experts for Boden Corridor",
+        "supplier": "RAMBOLL",
+        "phase": "Phase 1A",
+        "budget": 300816.0,
+        "forecast": 300816.0,
+        "potential_exposure": 72721.0,
+        "potential_forecast": 373537.0,
+        "vowd": 0.0,
+        "change_order": 0.0
+      },
+      {
+        "package": "BOD-BOP-054",
+        "description": "Substructure, Railway & Catenary",
+        "supplier": "GRK",
+        "phase": "Phase 1A",
+        "budget": 35208047.0,
+        "forecast": 39882802.62,
+        "potential_exposure": 2650024.0,
+        "potential_forecast": 42532826.62,
+        "vowd": 14236692.125862861,
+        "change_order": 4674755.619999997
+      },
+      {
+        "package": "BOD-BOP-061B",
+        "description": "Former SWECO Engineering commitment for ROS",
+        "supplier": "SWECO",
+        "phase": "Phase 1A",
+        "budget": 805785.0,
+        "forecast": 805785.0,
+        "potential_exposure": 0.0,
+        "potential_forecast": 805785.0,
+        "vowd": 45814.11848173111,
+        "change_order": 0.0
+      },
+      {
+        "package": "BOD-BOP-061F",
+        "description": "New SWECO Engineering commitment - ROS 2025",
+        "supplier": "SWECO",
+        "phase": "Phase 1A",
+        "budget": 657373.0,
+        "forecast": 706806.0,
+        "potential_exposure": 0.0,
+        "potential_forecast": 706806.0,
+        "vowd": 620161.4047534587,
+        "change_order": 49433.0
+      },
+      {
+        "package": "BOD-BOP-065",
+        "description": "Structural Building for Rail staff",
+        "supplier": "To be Cancelled",
+        "phase": "Cancelled",
+        "budget": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 330000.0,
+        "potential_forecast": 330000.0,
+        "vowd": 0.0,
+        "change_order": 0.0
+      },
+      {
+        "package": "BOD-BOP-ROS",
+        "description": "Undefined package",
+        "supplier": "-",
+        "phase": "Phase 1B",
+        "budget": 0.0,
+        "forecast": 0.0,
+        "potential_exposure": 6407875.0,
+        "potential_forecast": 6407875.0,
+        "vowd": 0.0,
+        "change_order": 0.0
+      }
+    ],
+    "ponds": [
+      {
+        "package": "BOD-BOP-019E",
+        "description": "Underground Services BOP",
+        "supplier": "GRK",
+        "forecast": 14517724.931232529,
+        "vowd": 6288635.802291593,
+        "potential_exposure": 2233078.0,
+        "potential_forecast": 16750802.931232529
+      }
+    ],
+    "roads": [
+      {
+        "package": "BOD-BOP-019E",
+        "description": "Underground Services BOP",
+        "supplier": "GRK",
+        "forecast": 13342603.748669742,
+        "vowd": 5790654.52987939,
+        "potential_exposure": 5963132.0,
+        "potential_forecast": 19305735.748669744
+      }
+    ]
+  },
+  "components_by_scope": {
+    "rail": [],
+    "ponds": [],
+    "roads": []
+  },
+  "exposures_by_scope": {
+    "rail": [
+      {
+        "item_id": "OV-3795",
+        "package": "BOD-BOP-ROS",
+        "package_name": "- - - ROS General - - -",
+        "description": "Slabs inside CLP and scrap yard buildings for rails. Transfer of scope from STM to BOP",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 6207875.0
+      },
+      {
+        "item_id": "IDOM4147",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "Winterization in ROS",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 1000000.0
+      },
+      {
+        "item_id": "OV-3244",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "Working in separate areas and separate techniques",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 1000000.0
+      },
+      {
+        "item_id": "OV-3782",
+        "package": "BOD-BOP-065",
+        "package_name": "Structural Building for Rail staff",
+        "description": "On-site building for train staff (€ 2.200,00 per m2)",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 330000.0
+      },
+      {
+        "item_id": "IDOM4243",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "New BoQs due to change designs by Sweco - Substructure & BEST, Southern Rail Material",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "High",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 297718.0
+      },
+      {
+        "item_id": "IDOM4284",
+        "package": "BOD-BOP-ROS",
+        "package_name": "- - - ROS General - - -",
+        "description": "Water barrier",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "",
+        "potential_exposure": 200000.0
+      },
+      {
+        "item_id": "IDOM4276",
+        "package": "BOD-BOP-053",
+        "package_name": "Railway Infrastructure experts for Boden Corridor",
+        "description": "Train alliance and Transport styrelsen administrative costs, all related to ROS commissioning",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 72721.0
+      },
+      {
+        "item_id": "New026",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod 16 november to last december",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "High",
+        "cr_number": "CR-03861",
+        "potential_exposure": 50004.0
+      },
+      {
+        "item_id": "New027",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod January",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "High",
+        "cr_number": "CR-03868",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "New028",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod February",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "High",
+        "cr_number": "CR-03869",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "IDOM4306",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod March",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04298",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "IDOM4360",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod April",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04358",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "IDOM4531",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod May",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-BOP-04426",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "IDOM4532",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 14 Increased and extended organization on-site Rail 2025-2026 Timeperiod June",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-BOP-04427",
+        "potential_exposure": 33336.0
+      },
+      {
+        "item_id": "IDOM4305",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 27 Additional work associated with storing material during winter",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04195",
+        "potential_exposure": 30631.0
+      },
+      {
+        "item_id": "IDOM4362",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail - Related to CR-04195 - Notification 27 Additional work associated with storing material during winter",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04374",
+        "potential_exposure": 23479.0
+      },
+      {
+        "item_id": "IDOM4304",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Fencing of Scrapyard (section 4B)",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04194",
+        "potential_exposure": 19813.0
+      },
+      {
+        "item_id": "IDOM4533",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK Temporary installation of 4 bumpers in external rail and later installation in final location in ROS",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-BOP-04430",
+        "potential_exposure": 19088.0
+      },
+      {
+        "item_id": "IDOM4361",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail - Storage of copper offsite in GRK facility",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04373",
+        "potential_exposure": 4071.0
+      },
+      {
+        "item_id": "IDOM4307",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail Notification 22 Netstations",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04299",
+        "potential_exposure": 2672.0
+      },
+      {
+        "item_id": "IDOM4363",
+        "package": "BOD-BOP-054",
+        "package_name": "Rail On site (Existing contract)",
+        "description": "GRK On-Site Rail - Related to CR-04299 - Notification 22 Netstations",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04375",
+        "potential_exposure": 2532.0
+      }
+    ],
+    "ponds": [
+      {
+        "item_id": "IDOM4372",
+        "package": "BOD-BOP-019E",
+        "package_name": "Underground Services BOP",
+        "description": "PONDS: Wetlands & service roads",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "",
+        "potential_exposure": 1583086.0
+      },
+      {
+        "item_id": "IDOM4323",
+        "package": "BOD-BOP-019E",
+        "package_name": "Underground Services BOP",
+        "description": "PONDS: GRK - Surcharge Removal from East Pond",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Pending Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04341",
+        "potential_exposure": 649992.0
+      }
+    ],
+    "roads": [
+      {
+        "item_id": "IDOM4241",
+        "package": "BOD-BOP-019EH",
+        "package_name": "UG Services & Roads (Structural layers) - Priority 2+3+Other Areas (Re-tender)",
+        "description": "ROADS: Structural layers- Priority 2+3+Other Areas (Re-tender)",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 15757231.0
+      },
+      {
+        "item_id": "IDOM4081",
+        "package": "BOD-BOP-019EG",
+        "package_name": "Single Roads / Road Finishing Layer + Bike Lanes + Side Walk",
+        "description": "ROADS: Walkways and Bikepaths in BOP",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 8450000.0
+      },
+      {
+        "item_id": "IDOM4249",
+        "package": "BOD-BOP-019EG",
+        "package_name": "Single Roads / Road Finishing Layer + Bike Lanes + Side Walk",
+        "description": "ROADS: Asphalt layer for roads",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 7000000.0
+      },
+      {
+        "item_id": "IDOM4366",
+        "package": "BOD-BOP-019E",
+        "package_name": "Underground Services BOP",
+        "description": "GRK-EAST DITCH and EAST DITCH SERVICE ROAD COMPLETION",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Pending Change",
+        "criticality": "Medium",
+        "cr_number": "CR-04360",
+        "potential_exposure": 4287893.0
+      },
+      {
+        "item_id": "IDOM4077",
+        "package": "BOD-BOP-019EG",
+        "package_name": "Single Roads / Road Finishing Layer + Bike Lanes + Side Walk",
+        "description": "ROADS: Lighting for roads",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 2800000.0
+      },
+      {
+        "item_id": "IDOM4250",
+        "package": "BOD-BOP-019E",
+        "package_name": "Underground Services BOP",
+        "description": "ROADS: Service roads 1&2, Railway service road, Pond service roads",
+        "supplier": "GRK",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Medium",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 1675239.0
+      },
+      {
+        "item_id": "IDOM4083",
+        "package": "BOD-BOP-019EG",
+        "package_name": "Single Roads / Road Finishing Layer + Bike Lanes + Side Walk",
+        "description": "ROADS: Vertical signage for roads",
+        "supplier": "",
+        "status": "Uncommitted",
+        "type": "Potential Change",
+        "criticality": "Low",
+        "cr_number": "- - - - - -",
+        "potential_exposure": 1000000.0
+      }
+    ]
+  }
+}

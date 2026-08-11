@@ -2,12 +2,14 @@
 
 ## Executive analytics update
 
-- The Overview starts with four concise management signals for progress, actions, potential exposure, and baseline slip.
+- The Overview starts with five concise management signals for progress, actions, potential exposure, ETC remaining, and baseline slip.
 - Headline cards open the relevant scope or cost panel; the portfolio action card opens a copyable action list.
 - Progress, action pressure, and cost exposure use separate single-axis charts so units and comparisons remain clear.
 - A data-freshness strip distinguishes the active weekly report, monthly cost report, and schedule baseline dates.
 - The six-week control pressure heatmap and all existing scope detail, action, cost, and milestone sections remain available.
-- Weekly controls now include the 2026 Week 27 report with a 04 Jul 2026 cut-off; prior weekly history remains selectable.
+- Weekly controls include 2026 W05-W31, with a 01 Aug 2026 cut-off for the latest report.
+- Monthly cost controls include September 2025 through July 2026; June and July use a schema-aware normalizer that supports the redesigned workbook.
+- The floating Roger chatbot has been removed so the dashboard retains the full working area.
 
 Windows launch:
 

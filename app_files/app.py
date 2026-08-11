@@ -7229,100 +7229,15 @@ def _xlsx_num(value: Any) -> Optional[float]:
 
 
 def _register_uploaded_cost_report(uploaded: Any) -> None:
-    from io import BytesIO
-    from openpyxl import load_workbook
+    from scripts.normalize_cost_report import normalize_cost_workbook
+
     COST_REPORT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     MONTHLY_COST_DIR.mkdir(parents=True, exist_ok=True)
     raw = uploaded.getvalue()
     safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", uploaded.name)
     (COST_REPORT_UPLOAD_DIR / safe).write_bytes(raw)
-    wb = load_workbook(BytesIO(raw), data_only=True, read_only=True)
-    data = deepcopy(cached_monthly_cost())
-    meta = data.setdefault("metadata", {})
-    meta["source_file"] = uploaded.name
-    meta["report_name"] = Path(uploaded.name).stem
-    # Active month from P. Packages or P. BOD-BOP-019E
-    for sheet_name in ["P. Packages", "P. BOD-BOP-019E"]:
-        if sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            for row in ws.iter_rows(max_row=6, max_col=30, values_only=True):
-                vals = list(row)
-                for v in vals:
-                    if hasattr(v, "strftime"):
-                        meta["data_date"] = v.strftime("%Y-%m-%d")
-                        meta["cutoff_month"] = v.strftime("%Y-%m")
-                        break
-                if meta.get("cutoff_month"):
-                    break
-        if meta.get("cutoff_month"):
-            break
-    ss = data.setdefault("scope_summary", {})
-    # Rail total from P. Packages
-    if "P. Packages" in wb.sheetnames:
-        ws = wb["P. Packages"]
-        for row in ws.iter_rows(max_row=250, max_col=25, values_only=True):
-            vals = list(row)
-            if str(vals[2] if len(vals)>2 else "").strip().lower() == "rails on site - total":
-                rail = ss.setdefault("rail", {"scope_id": "rail"})
-                rail.update({"budget": _xlsx_num(vals[6]), "forecast": _xlsx_num(vals[18]), "potential_forecast": _xlsx_num(vals[20]), "vowd": rail.get("vowd")})
-                break
-    # Ponds/Roads split from P. BOD-BOP-019E
-    if "P. BOD-BOP-019E" in wb.sheetnames:
-        ws = wb["P. BOD-BOP-019E"]
-        for row in ws.iter_rows(max_row=40, max_col=8, values_only=True):
-            vals = list(row)
-            label = str(vals[0] or "").strip().lower()
-            sid = "ponds" if label == "ponds and culverts" else ("roads" if label == "roads and ditches" else None)
-            if sid:
-                s = ss.setdefault(sid, {"scope_id": sid})
-                forecast = _xlsx_num(vals[5])
-                exposure = _xlsx_num(vals[4])
-                s.update({"forecast": forecast, "potential_exposure": exposure, "potential_forecast": (forecast or 0) + (exposure or 0)})
-    # Ponds current budget from Initial Budget / SIN Ponds and Culverts.
-    if "Initial Budget" in wb.sheetnames:
-        ws = wb["Initial Budget"]
-        ponds_budget = 0.0
-        for row in ws.iter_rows(max_row=2500, max_col=30, values_only=True):
-            vals = list(row)
-            text = " ".join(str(v) for v in vals if v is not None).lower()
-            if "sin ponds and culverts" in text:
-                val = _xlsx_num(vals[17] if len(vals) > 17 else None)
-                if val is not None:
-                    ponds_budget += val
-        if ponds_budget:
-            ss.setdefault("ponds", {"scope_id": "ponds"})["budget"] = ponds_budget
-    # VOWD from Commitment & budget tracker.
-    if "Commitment & budget tracker" in wb.sheetnames:
-        ws = wb["Commitment & budget tracker"]
-        rail_packages = {'BOD-BOP-001A','BOD-BOP-001B','BOD-BOP-054','BOD-BOP-053','BOD-BOP-061B','BOD-BOP-061F','BOD-BOP-007D','BOD-BOP-ROS','BOD-BOP-019ED'}
-        vowd = {"rail":0.0,"ponds":0.0,"roads":0.0}
-        for row in ws.iter_rows(min_row=2, max_row=6000, max_col=30, values_only=True):
-            vals=list(row)
-            pkg=str(vals[3] if len(vals)>3 else "")
-            main=str(vals[16] if len(vals)>16 else "")
-            desc=str(vals[11] if len(vals)>11 else "")
-            v=_xlsx_num(vals[24] if len(vals)>24 else None)
-            if v is None:
-                continue
-            if pkg in rail_packages:
-                vowd["rail"] += v
-            if main.lower() == "ponds and culverts" or "ponds and culverts" in (main+" "+desc).lower():
-                vowd["ponds"] += v
-            if main.lower() == "roads and ditches" or "roads and ditches" in (main+" "+desc).lower():
-                vowd["roads"] += v
-        for sid,val in vowd.items():
-            if abs(val) > 0:
-                ss.setdefault(sid, {"scope_id": sid})["vowd"] = val
-    for sid, summary in ss.items():
-        forecast = _safe_float(summary.get("forecast"))
-        budget = _safe_float(summary.get("budget"))
-        pf = _safe_float(summary.get("potential_forecast"))
-        if forecast is not None and budget is not None:
-            summary["change_order"] = forecast - budget
-            summary["co"] = summary["change_order"]
-        if forecast is not None and pf is not None:
-            summary["potential_exposure"] = pf - forecast
-            summary["potential_deviation"] = summary["potential_exposure"]
+    data = normalize_cost_workbook(raw, uploaded.name, previous=cached_monthly_cost())
+    meta = data["metadata"]
     rid = re.sub(r"[^A-Za-z0-9]+", "_", f"{meta.get('cutoff_month')}_{Path(uploaded.name).stem}").strip("_").lower()
     (MONTHLY_COST_DIR / f"{rid or Path(uploaded.name).stem}.json").write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
 
@@ -26467,14 +26382,14 @@ V76_EXECUTIVE_ANALYTICS_CSS = """
 }
 .management-insights-grid-v76{
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-columns:repeat(5,minmax(0,1fr));
   gap:10px;
   margin:0 0 10px 0;
 }
 .insight-card-v76,
 .insight-action-wrap-v76{
   min-width:0;
-  min-height:112px;
+  min-height:104px;
   border:1px solid #d7dce5;
   border-left:4px solid var(--insight-accent,#2563eb);
   border-radius:8px;
@@ -26497,7 +26412,7 @@ V76_EXECUTIVE_ANALYTICS_CSS = """
 }
 .insight-action-wrap-v76 > .insight-card-v76{
   width:100%;
-  min-height:110px;
+  min-height:102px;
   border:0;
   border-radius:4px;
   box-shadow:none;
@@ -26615,7 +26530,10 @@ V76_EXECUTIVE_ANALYTICS_CSS = """
 .st-key-pm_actions_v76{min-height:340px;}
 .st-key-pm_heatmap_v76,
 .st-key-pm_cost_v76{min-height:330px;}
-@media(max-width:1180px){
+@media(max-width:1400px){
+  .management-insights-grid-v76{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+@media(max-width:980px){
   .management-insights-grid-v76{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media(max-width:760px){
@@ -26738,6 +26656,7 @@ def _management_brief_v76(
         (_safe_float((a.get("cost") or {}).get("forecast")) or 0.0) + (_safe_float((a.get("cost") or {}).get("exposure")) or 0.0)
         for a in assessments
     )
+    total_etc = sum(max(0.0, _safe_float((a.get("cost") or {}).get("etc")) or 0.0) for a in assessments)
     cost_scope = max(assessments, key=lambda a: _safe_float((a.get("cost") or {}).get("exposure")) or 0.0)
     cost_note = f"Potential FC {_fmt_money(total_potential)} | {cost_scope.get('scope', 'Scope')} largest"
 
@@ -26761,6 +26680,13 @@ def _management_brief_v76(
             cost_note,
             "Cost Status",
             "critical" if total_exposure > 0 else "controlled",
+        ),
+        _insight_card_v76(
+            "ETC remaining",
+            _fmt_money(total_etc),
+            f"Forecast less VOWD | {_active_month_label_v29()}",
+            "Cost Status",
+            "watch" if total_etc > 0 else "controlled",
         ),
         _insight_card_v76(
             "Maximum baseline slip",
@@ -26993,7 +26919,7 @@ def render_pm_visuals(records: List[Dict[str, Any]], selected_year: int, selecte
         except TypeError:
             cost_box = st.container()
         with cost_box:
-            _chart_header_v76("Forecast plus potential exposure", f"{_active_month_label_v29()} | EUR millions")
+            _chart_header_v76("Financial exposure by scope", f"Forecast plus potential exposure | {_active_month_label_v29()}")
             _plot_decision_chart_v76(_cost_exposure_figure_v76(assessments), "pm_cost_chart_v76")
 
 
@@ -27009,7 +26935,6 @@ def main() -> None:
     selected_year, selected_week = render_header(view_bundle_initial, selected_label_initial, panel_choice=panel_choice)
     view_bundle = filter_bundle_until(st.session_state["bundle"], selected_year, selected_week)
     selected_cutoff = selected_cutoff_date(view_bundle)
-    render_roger_assistant(st.session_state["bundle"], profiles, selected_year, selected_week, selected_cutoff)
     if panel_choice == "Executive overview":
         render_executive_overview(st.session_state["bundle"], profiles, selected_year, selected_week, current_date=selected_cutoff)
     elif panel_choice in {"Cost Status", globals().get("COST_PANEL_LABEL", "Cost Status")}:
@@ -27017,11 +26942,10 @@ def main() -> None:
     else:
         render_scope_panel(st.session_state["bundle"], profiles, SCOPE_PANEL_MAP[panel_choice], selected_year, selected_week, current_date=selected_cutoff)
     st.markdown(
-        "<div class='footer-note'>Data source: uploaded weekly reports, the Rail On Site May 2026 reference presentation, BL CC E006 schedule baseline, Budget Forecast Roads-Rail-Ponds reference presentation, and selectable monthly cost reports. This app is focused only on Rail On Site (ROS), Ponds and Roads. Week labels include year to support 2024, 2025, 2026 and future history uploads.</div>",
+        "<div class='footer-note'>Data sources: weekly progress reports through 2026 W31, monthly cost controls through July 2026, and BL CC E006 schedule baseline. Scope is limited to Rail On Site (ROS), Ponds and Roads.</div>",
         unsafe_allow_html=True,
     )
-    if not st.session_state.pop("_roger_interacted_v64", False):
-        _reset_main_scroll_v37()
+    _reset_main_scroll_v37()
 
 
 if __name__ == "__main__":
