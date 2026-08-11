@@ -24028,8 +24028,9 @@ def _latest_defaults_v32(bundle: Dict[str, Any]) -> None:
     preserved_week = st.session_state.pop("_preserve_week_after_cost_scope_v54", None)
     if week_labels:
         latest_week = week_labels[-1]
-        if st.session_state.get("_latest_week_applied_v32") != latest_week:
+        if st.session_state.get("_latest_week_default_revision_v78") != latest_week:
             chosen_week = latest_week
+            st.session_state["_latest_week_default_revision_v78"] = latest_week
         else:
             chosen_week = next(
                 (
@@ -24054,9 +24055,10 @@ def _latest_defaults_v32(bundle: Dict[str, Any]) -> None:
     if cost_labels:
         latest_month = cost_labels[-1]
         current_month = st.session_state.get("monthly_cost_report_choice_portfolio")
-        if st.session_state.get("_latest_month_applied_v32") != latest_month:
+        if st.session_state.get("_latest_month_default_revision_v78") != latest_month:
             if _set_state_value_v59("monthly_cost_report_choice_portfolio", latest_month):
                 st.session_state["_latest_month_applied_v32"] = latest_month
+                st.session_state["_latest_month_default_revision_v78"] = latest_month
         elif preserved_month in cost_labels:
             if _set_state_value_v59("monthly_cost_report_choice_portfolio", preserved_month):
                 st.session_state["_latest_month_applied_v32"] = latest_month
