@@ -20682,8 +20682,8 @@ def _pm_scope_card_html(a: Dict[str, Any]) -> str:
             f"{_action_popover_button_v32(f'{a['scope']} near-due actions', near_rows, len(near_rows), label=str(actions.get('Near due', 0)), class_name='action-count-button')} near due",
             raw=True,
         ),
-        _pm_signal_html_v40("Construction", f"{_progress_dev_v40(a.get('construction_dev'))} vs forecast; max 4%"),
-        _pm_signal_html_v40("Engineering", f"{_progress_dev_v40(a.get('engineering_dev'))} vs forecast; max 4%"),
+        _pm_signal_html_v40("Construction", f"{_progress_dev_v40(a.get('construction_dev'))} vs forecast"),
+        _pm_signal_html_v40("Engineering", f"{_progress_dev_v40(a.get('engineering_dev'))} vs forecast"),
         _pm_signal_html_v40("Baseline", f"{baseline.get('slipped', 0)} slipped / max +{baseline.get('max_delay', 0)} days"),
         _pm_signal_html_v40("Cost", f"Exposure {_pm_pct(cost.get('exposure_pct'))}; ETC {_fmt_money(cost.get('etc'))}"),
     ]
@@ -20746,8 +20746,8 @@ def render_pm_control_health(records: List[Dict[str, Any]], selected_year: int, 
         "<div class='pm-health-grid'>"
         f"<div class='pm-health-card {posture_tone}'><span>Portfolio posture</span><b>{_html(str(intervention))}</b><p>intervention scopes; {watch} watch scopes</p></div>"
         + action_card
-        + f"<div class='pm-health-card {con_tone}'><span>Construction deviation</span><b>{_html(_progress_dev_v40(worst_con))}</b><p>vs forecast on {_html(str(worst_con_scope))}; max 4%</p></div>"
-        + f"<div class='pm-health-card {eng_tone}'><span>Engineering deviation</span><b>{_html(_progress_dev_v40(worst_eng))}</b><p>vs forecast on {_html(str(worst_eng_scope))}; max 4%</p></div>"
+        + f"<div class='pm-health-card {con_tone}'><span>Construction deviation</span><b>{_html(_progress_dev_v40(worst_con))}</b><p>vs forecast on {_html(str(worst_con_scope))}</p></div>"
+        + f"<div class='pm-health-card {eng_tone}'><span>Engineering deviation</span><b>{_html(_progress_dev_v40(worst_eng))}</b><p>vs forecast on {_html(str(worst_eng_scope))}</p></div>"
         + f"<div class='pm-health-card {baseline_tone}'><span>Baseline / exposure check</span><b>+{baseline_max}d</b><p>max BL slip; exposure {_html(_pm_pct(exp_pct))} on {_html(str(exp_scope))}</p></div></div>",
         unsafe_allow_html=True,
     )
@@ -20778,8 +20778,8 @@ def render_pm_scope_summary(rec: Dict[str, Any], selected_year: int, selected_we
         "<div class='pm-scope-summary'><div class='pm-scope-summary-grid'>"
         + status_button
         + action_card
-        + f"<div class='pm-scope-summary-cell'><span class='label'>Construction deviation</span><b>{_html(_progress_dev_v40(a.get('construction_dev')))}</b><p>vs forecast; max 4%</p></div>"
-        + f"<div class='pm-scope-summary-cell'><span class='label'>Engineering deviation</span><b>{_html(_progress_dev_v40(a.get('engineering_dev')))}</b><p>vs forecast; max 4%</p></div>"
+        + f"<div class='pm-scope-summary-cell'><span class='label'>Construction deviation</span><b>{_html(_progress_dev_v40(a.get('construction_dev')))}</b><p>vs forecast</p></div>"
+        + f"<div class='pm-scope-summary-cell'><span class='label'>Engineering deviation</span><b>{_html(_progress_dev_v40(a.get('engineering_dev')))}</b><p>vs forecast</p></div>"
         + f"<div class='pm-scope-summary-cell'><span class='label'>Baseline variance</span><b>+{baseline.get('max_delay', 0)} days</b><p>{baseline.get('slipped', 0)} slipped milestone matches</p></div>"
         + f"<div class='pm-scope-summary-cell'><span class='label'>Cost exposure</span><b>{_html(_pm_pct(cost.get('exposure_pct')))}</b><p>ETC {_html(_fmt_money(cost.get('etc')))}</p></div></div></div>",
         unsafe_allow_html=True,
@@ -21615,8 +21615,8 @@ def _pm_scope_card_html(a: Dict[str, Any]) -> str:
     )
     signals = [
         _pm_signal_html_v40("Actions", action_html, raw=True),
-        _pm_signal_html_v40("Construction", f"{_progress_dev_v40(a.get('construction_dev'))} vs forecast; max 4%"),
-        _pm_signal_html_v40("Engineering", f"{_progress_dev_v40(a.get('engineering_dev'))} vs forecast; max 4%"),
+        _pm_signal_html_v40("Construction", f"{_progress_dev_v40(a.get('construction_dev'))} vs forecast"),
+        _pm_signal_html_v40("Engineering", f"{_progress_dev_v40(a.get('engineering_dev'))} vs forecast"),
         _pm_signal_html_v40("Baseline", f"{baseline.get('slipped', 0)} slipped / max +{baseline.get('max_delay', 0)} days"),
         _pm_signal_html_v40("Cost", _overview_cost_inline_v43(a.get("scope_id")), raw=True),
     ]
@@ -24391,7 +24391,7 @@ def _roger_progress_answer(question: str, assessments: List[Dict[str, Any]], sel
         lines.append(
             f"- **{_roger_scope_label(str(a.get('scope_id')))}:** Construction {_roger_fmt_pct(con_actual)} "
             f"({_roger_fmt_pct(con_dev, signed=True)} vs forecast); Engineering {_roger_fmt_pct(eng_actual)} "
-            f"({_roger_fmt_pct(eng_dev, signed=True)} vs forecast). Max management deviation target: 4%."
+            f"({_roger_fmt_pct(eng_dev, signed=True)} vs forecast)."
         )
     return "\n".join(lines)
 
@@ -26621,14 +26621,16 @@ def _management_brief_v76(
         key=lambda a: _safe_float(a.get("construction_dev")) if _safe_float(a.get("construction_dev")) is not None else 999.0,
     )
     progress_dev = _safe_float(progress_scope.get("construction_dev"))
-    progress_tone = "critical" if progress_dev is not None and progress_dev < -4.0 else ("watch" if progress_dev is not None and progress_dev < 0 else "controlled")
+    progress_tone = "critical" if progress_dev is not None and progress_dev < 0 else "controlled"
     progress_value = "N/A" if progress_dev is None else f"{progress_dev:+.2f}%"
     if progress_dev is None:
         progress_note = f"{progress_scope.get('scope', 'Scope')} | No variance loaded"
-    elif progress_dev < -4.0:
-        progress_note = f"{progress_scope.get('scope', 'Scope')} | {abs(progress_dev) - 4.0:.2f}% beyond 4% limit"
+    elif progress_dev < 0:
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | {abs(progress_dev):.2f}% below forecast"
+    elif progress_dev > 0:
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | {progress_dev:.2f}% above forecast"
     else:
-        progress_note = f"{progress_scope.get('scope', 'Scope')} | Within 4% limit"
+        progress_note = f"{progress_scope.get('scope', 'Scope')} | On forecast"
 
     action_rows = [row for a in assessments for row in ((a.get("actions") or {}).get("rows") or [])]
     attention_rows = _filter_action_rows_v32(action_rows, {"Delayed", "Near due"})
@@ -26737,13 +26739,15 @@ def _decision_figure_style_v76(fig: go.Figure, height: int = 275) -> go.Figure:
 def _progress_deviation_figure_v76(assessments: List[Dict[str, Any]]) -> go.Figure:
     rows = []
     for a in assessments:
-        dev = _safe_float(a.get("construction_dev"))
-        actual = _safe_float(a.get("construction_actual"))
-        forecast = (actual - dev) if actual is not None and dev is not None else None
-        rows.append({"scope": _scope_chart_label_v76(a.get("scope")), "dev": dev or 0.0, "actual": actual, "forecast": forecast})
-    rows.sort(key=lambda row: row["dev"], reverse=True)
-    values = [row["dev"] for row in rows]
-    colors = ["#c73535" if value < -4.0 else ("#d97706" if value < 0 else "#14805e") for value in values]
+        actual, forecast, dev = _reconcile_progress_values_v78(
+            a.get("construction_actual"),
+            a.get("construction_forecast"),
+            a.get("construction_dev"),
+        )
+        rows.append({"scope": _scope_chart_label_v76(a.get("scope")), "dev": dev, "actual": actual, "forecast": forecast})
+    rows.sort(key=lambda row: row["dev"] if row["dev"] is not None else 0.0, reverse=True)
+    values = [row["dev"] if row["dev"] is not None else 0.0 for row in rows]
+    colors = ["#c73535" if value < 0 else ("#14805e" if value > 0 else "#667085") for value in values]
     custom = [["N/A" if row["actual"] is None else f"{row['actual']:.2f}%", "N/A" if row["forecast"] is None else f"{row['forecast']:.2f}%"] for row in rows]
     fig = go.Figure(go.Bar(
         x=values,
@@ -26757,15 +26761,12 @@ def _progress_deviation_figure_v76(assessments: List[Dict[str, Any]]) -> go.Figu
         customdata=custom,
         hovertemplate="<b>%{y}</b><br>Actual %{customdata[0]}<br>Forecast %{customdata[1]}<br>Deviation %{x:+.2f}%<extra></extra>",
     ))
-    min_x = min(values + [-4.0])
-    max_x = max(values + [0.0])
+    axis_bound = max(1.0, max((abs(value) for value in values), default=0.0) * 1.28)
     fig.add_vline(x=0, line_width=1.2, line_color="#667085")
-    fig.add_vline(x=-4.0, line_width=1.5, line_dash="dash", line_color="#c73535")
-    fig.add_annotation(x=-4.0, y=1.03, yref="paper", text="4% limit", showarrow=False, font=dict(size=10, color="#9b1c1c"))
     fig.update_xaxes(
-        title="Deviation vs forecast",
+        title="Actual minus forecast",
         ticksuffix="%",
-        range=[min(-7.0, min_x - 1.0), max(1.0, max_x + 1.0)],
+        range=[-axis_bound, axis_bound],
         gridcolor="#eef1f5",
         zeroline=False,
     )
@@ -26894,7 +26895,7 @@ def render_pm_visuals(records: List[Dict[str, Any]], selected_year: int, selecte
         except TypeError:
             progress_box = st.container()
         with progress_box:
-            _chart_header_v76("Construction deviation vs forecast", "4% management limit")
+            _chart_header_v76("Construction deviation vs forecast", "Actual minus forecast")
             _plot_decision_chart_v76(_progress_deviation_figure_v76(assessments), "pm_progress_chart_v76")
     with right:
         try:
@@ -26923,7 +26924,206 @@ def render_pm_visuals(records: List[Dict[str, Any]], selected_year: int, selecte
             _plot_decision_chart_v76(_cost_exposure_figure_v76(assessments), "pm_cost_chart_v76")
 
 
+# -----------------------------------------------------------------------------
+# v78: canonical progress variance, reliable pressure hover, and layer control.
+# -----------------------------------------------------------------------------
+
+V78_LAYER_CSS = """
+<style>
+/* Sticky controls stay above content while every BaseWeb menu stays above them. */
+.st-key-rc_panel_header_v27,
+div[data-testid="stLayoutWrapper"]:has(> .st-key-rc_panel_header_v27){
+  z-index:2000000!important;
+  overflow:visible!important;
+}
+.rc-v32-scope-sticky,
+div[data-testid="stLayoutWrapper"]:has(> .rc-v32-scope-sticky){
+  z-index:1500000!important;
+}
+/* Overview card headings belong to their cards and must never float over controls. */
+div[data-testid="stMain"] .matrix-head,
+div[data-testid="stMainBlockContainer"] .matrix-head{
+  position:relative!important;
+  top:auto!important;
+  z-index:1!important;
+}
+body div[data-baseweb="popover"],
+body [data-baseweb="popover"],
+body div[data-baseweb="menu"],
+body [data-baseweb="menu"],
+body div[role="listbox"],
+body ul[role="listbox"]{
+  z-index:2147483647!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+}
+body div:has(> [data-baseweb="popover"]),
+body div:has(> [data-baseweb="menu"]),
+body div:has(> [role="listbox"]),
+body div:has(> ul[role="listbox"]){
+  z-index:2147483647!important;
+  overflow:visible!important;
+}
+body div[role="listbox"],
+body ul[role="listbox"]{
+  max-height:min(58vh,430px)!important;
+  overflow-y:auto!important;
+  background:#ffffff!important;
+  border:1px solid #cfd6e4!important;
+  box-shadow:0 20px 48px rgba(16,24,40,.24)!important;
+}
+@media(max-width:760px){
+  .st-key-rc_panel_header_v27,
+  div[data-testid="stLayoutWrapper"]:has(> .st-key-rc_panel_header_v27){
+    position:relative!important;
+    top:auto!important;
+    z-index:10!important;
+  }
+}
+</style>
+"""
+
+
+def _canonical_progress_series_v78(value: Any) -> Any:
+    if not isinstance(value, pd.DataFrame) or value.empty:
+        return value
+    frame = value.copy()
+    columns = {str(column).strip().lower(): column for column in frame.columns}
+    actual_col = columns.get("actual")
+    forecast_col = columns.get("forecast")
+    if actual_col is None or forecast_col is None:
+        return frame
+    actual = pd.to_numeric(frame[actual_col], errors="coerce")
+    forecast = pd.to_numeric(frame[forecast_col], errors="coerce")
+    deviation_col = columns.get("deviation", "deviation")
+    if deviation_col not in frame.columns:
+        frame[deviation_col] = pd.NA
+    reported = pd.to_numeric(frame[deviation_col], errors="coerce")
+    for index in frame.index:
+        actual_value, forecast_value, deviation_value = _reconcile_progress_values_v78(
+            actual.get(index), forecast.get(index), reported.get(index)
+        )
+        if forecast_value is not None:
+            frame.at[index, forecast_col] = forecast_value
+        if deviation_value is not None:
+            frame.at[index, deviation_col] = deviation_value
+    return frame
+
+
+def _reconcile_progress_values_v78(actual: Any, forecast: Any, reported_deviation: Any) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    actual_value = _safe_float(actual)
+    forecast_value = _safe_float(forecast)
+    reported_value = _safe_float(reported_deviation)
+    if reported_value is not None:
+        calculated = actual_value - forecast_value if actual_value is not None and forecast_value is not None else None
+        if actual_value is not None and (calculated is None or abs(calculated - reported_value) > 0.05):
+            forecast_value = actual_value - reported_value
+        return actual_value, forecast_value, reported_value
+    deviation_value = actual_value - forecast_value if actual_value is not None and forecast_value is not None else None
+    return actual_value, forecast_value, deviation_value
+
+
+_build_scope_records_v78_base = build_scope_records
+
+
+def build_scope_records(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, scopes: Optional[List[Tuple[str, str, str]]] = None) -> List[Dict[str, Any]]:
+    records = _build_scope_records_v78_base(bundle, profiles, selected_year, selected_week, scopes=scopes)
+    for rec in records:
+        for discipline in ("construction", "engineering"):
+            actual, forecast, deviation = _reconcile_progress_values_v78(
+                rec.get(f"{discipline}_actual"),
+                rec.get(f"{discipline}_forecast"),
+                rec.get(f"{discipline}_deviation"),
+            )
+            rec[f"{discipline}_actual"] = actual
+            rec[f"{discipline}_forecast"] = forecast
+            rec[f"{discipline}_deviation"] = deviation
+        rec["progress_series"] = _canonical_progress_series_v78(rec.get("progress_series"))
+        rec["engineering_series"] = _canonical_progress_series_v78(rec.get("engineering_series"))
+    return records
+
+
+_pm_scope_assessment_v78_base = _pm_scope_assessment
+
+
+def _pm_scope_assessment(rec: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> Dict[str, Any]:
+    assessment = _pm_scope_assessment_v78_base(rec, selected_year, selected_week, current_date)
+    for discipline in ("construction", "engineering"):
+        actual, forecast, deviation = _reconcile_progress_values_v78(
+            rec.get(f"{discipline}_actual"),
+            rec.get(f"{discipline}_forecast"),
+            rec.get(f"{discipline}_deviation"),
+        )
+        assessment[f"{discipline}_actual"] = actual
+        assessment[f"{discipline}_forecast"] = forecast
+        assessment[f"{discipline}_dev"] = deviation
+    return assessment
+
+
+def _pressure_marker_v78(score: Optional[float]) -> str:
+    if score is None:
+        return "⬜"
+    if score >= 7.0:
+        return "🟥"
+    if score >= 4.0:
+        return "🟨"
+    return "🟩"
+
+
+def _pressure_history_hover_v78(scope: str, metric: str, items: List[Tuple[str, float, str]]) -> str:
+    values = list(items or [])[-6:]
+    padded: List[Tuple[str, Optional[float]]] = [("", None)] * max(0, 6 - len(values))
+    padded.extend((str(week_label), float(score)) for week_label, score, _detail in values)
+    cells = []
+    for week_label, score in padded[-6:]:
+        week = _roger_week_short_v71(week_label) or "--"
+        cells.append(f"<b>{week}</b> {_pressure_marker_v78(score)}")
+    return f"<b>{_html(scope)}</b><br>{_html(metric)}<br><br>{'   '.join(cells[:3])}<br>{'   '.join(cells[3:])}"
+
+
+def _pm_heatmap_figure_v55(assessments: List[Dict[str, Any]], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> go.Figure:
+    metrics, scopes, z = _pm_heatmap_matrix_v55(assessments)
+    history = _pm_heatmap_history_v55(selected_year, selected_week, current_date)
+    custom: List[List[str]] = []
+    for assessment, scope in zip(assessments, scopes):
+        scope_id = str(assessment.get("scope_id") or assessment.get("scope") or "")
+        custom.append([
+            _pressure_history_hover_v78(scope, metric, history.get((scope_id, metric), []))
+            for metric in metrics
+        ])
+    fig = go.Figure(data=go.Heatmap(
+        z=z,
+        x=metrics,
+        y=scopes,
+        zmin=0,
+        zmax=10,
+        xgap=7,
+        ygap=7,
+        colorscale=[[0, "#16a34a"], [.5, "#facc15"], [1, "#dc2626"]],
+        showscale=False,
+        customdata=custom,
+        hovertemplate="%{customdata}<extra></extra>",
+    ))
+    fig.update_layout(
+        height=285,
+        margin=dict(l=38, r=12, t=20, b=34),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Segoe UI, Arial, sans-serif", size=11, color="#1f2937"),
+        hoverlabel=dict(
+            bgcolor="#101828",
+            bordercolor="#101828",
+            align="left",
+            font=dict(family="Segoe UI Emoji, Segoe UI, Arial, sans-serif", color="#ffffff", size=12),
+        ),
+    )
+    fig.update_xaxes(showgrid=False, zeroline=False)
+    fig.update_yaxes(autorange="reversed", showgrid=False, zeroline=False)
+    return fig
+
+
 def main() -> None:
+    st.markdown(V78_LAYER_CSS, unsafe_allow_html=True)
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
     profiles = cached_profiles()
