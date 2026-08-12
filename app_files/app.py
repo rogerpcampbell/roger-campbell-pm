@@ -27647,9 +27647,347 @@ def render_scope_sections(rec: Dict[str, Any], selected_year: int, selected_week
         _copyable_table_component(["Package", "Description", "Supplier", "Budget", "CO", "Forecast", "Exposure", "Potential forecast", "Driver / note"], _cost_driver_rows(scope_id), numeric_cols={3, 4, 5, 6, 7}, key_prefix=f"v80_scope_drivers_{scope_id}")
 
 
+# -----------------------------------------------------------------------------
+# v81: chart-led portfolio and scope views; data maintenance is managed offline.
+# -----------------------------------------------------------------------------
+
+V81_VISUAL_CSS = """
+<style>
+.v81-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+.v81-chart-grid-note{margin:0 0 5px;color:#667085;font-size:.68rem;font-weight:750;}
+.v81-scope-visuals{margin-top:2px;}
+.v81-panel-nav{display:grid;gap:12px;margin:4px 0 16px;}
+.v81-panel-link{
+  display:flex;align-items:center;justify-content:center;min-height:48px;padding:10px 14px;
+  border:1px solid #ddd5e8;border-radius:8px;background:#fff;color:#17121f!important;
+  font-size:.91rem;font-weight:750;text-decoration:none!important;box-shadow:0 1px 2px rgba(16,24,40,.03);
+}
+.v81-panel-link:hover{border-color:#6f2dbd;background:#fbf8ff;color:#351258!important;}
+.v81-panel-link.active{border-color:#17121f;background:#17121f;color:#fff!important;box-shadow:0 5px 14px rgba(17,18,31,.16);}
+@media(max-width:1050px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+@media(max-width:560px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+</style>
+"""
+
+
+def render_sidebar(bundle: Dict[str, Any]) -> Tuple[str, int, int]:
+    _apply_url_panel_v32()
+    logo_src = logo_mark_data_uri() or logo_data_uri()
+    if logo_src:
+        st.sidebar.markdown(f"<div class='sidebar-logo'><img src='{logo_src}'><span>Roger Campbell PM</span></div>", unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown("<div class='sidebar-logo'><span>Roger Campbell PM</span></div>", unsafe_allow_html=True)
+    st.sidebar.title("Project controls")
+    st.sidebar.markdown("<div class='subsection-title'>Panel</div>", unsafe_allow_html=True)
+    panel_labels = ["Executive overview", "Cost Status", "Rail On Site (ROS)", "Ponds", "Roads"]
+    if st.session_state.get("panel_choice") not in panel_labels:
+        st.session_state["panel_choice"] = "Executive overview"
+    nav_labels = {
+        "Executive overview": "Overview", "Cost Status": "Cost Status",
+        "Rail On Site (ROS)": "Rail On Site (ROS)", "Ponds": "Ponds", "Roads": "Roads",
+    }
+    active_panel = st.session_state["panel_choice"]
+    links = []
+    for label in panel_labels:
+        active_class = " active" if label == active_panel else ""
+        links.append(
+            f"<a class='v81-panel-link{active_class}' href='{_management_panel_href_v76(label)}' "
+            f"target='_self'>{_html(nav_labels[label])}</a>"
+        )
+    st.sidebar.markdown("<nav class='v81-panel-nav' aria-label='Panel navigation'>" + "".join(links) + "</nav>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<div class='nav-active'>Current panel: {_html(st.session_state['panel_choice'])}</div>", unsafe_allow_html=True)
+    year, week = _selected_period_from_state_v32(st.session_state.get("bundle", bundle))
+    return st.session_state["panel_choice"], int(year), int(week)
+
+
+def _current_action_mix_figure_v81(assessments: List[Dict[str, Any]]) -> go.Figure:
+    statuses = ["Delayed", "Near due", "On track", "TBC"]
+    colors = {"Delayed": "#c73535", "Near due": "#d97706", "On track": "#14805e", "TBC": "#98a2b3"}
+    fig = go.Figure()
+    for status in statuses:
+        values = [int((assessment.get("actions") or {}).get(status, 0) or 0) for assessment in assessments]
+        fig.add_trace(go.Bar(
+            name=status, x=values, y=[_scope_chart_label_v76(a.get("scope")) for a in assessments], orientation="h",
+            marker_color=colors[status], text=[str(value) if value else "" for value in values], textposition="inside",
+            hovertemplate=f"{status}: %{{x}}<extra></extra>",
+        ))
+    fig.update_layout(barmode="stack")
+    fig.update_xaxes(title="Action count", rangemode="tozero", dtick=5)
+    fig.update_yaxes(autorange="reversed")
+    return _v80_chart_style(fig, height=300)
+
+
+def _current_progress_figure_v81(assessments: List[Dict[str, Any]]) -> go.Figure:
+    categories: List[str] = []
+    actuals: List[Optional[float]] = []
+    forecasts: List[Optional[float]] = []
+    deviations: List[Optional[float]] = []
+    for assessment in assessments:
+        scope = _scope_chart_label_v76(assessment.get("scope"))
+        for discipline in ("construction", "engineering"):
+            categories.append(f"{scope}<br>{discipline.title()}")
+            actuals.append(_safe_float(assessment.get(f"{discipline}_actual")))
+            forecasts.append(_safe_float(assessment.get(f"{discipline}_forecast")))
+            deviations.append(_safe_float(assessment.get(f"{discipline}_dev")))
+    custom = [["N/A" if value is None else f"{value:+.2f}%"] for value in deviations]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Actual", x=actuals, y=categories, orientation="h", marker_color="#2563eb", customdata=custom,
+        hovertemplate="Actual %{x:.2f}%<br>Deviation %{customdata[0]}<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        name="Forecast", x=forecasts, y=categories, orientation="h", marker_color="#cfd6e4", customdata=custom,
+        hovertemplate="Forecast %{x:.2f}%<br>Deviation %{customdata[0]}<extra></extra>",
+    ))
+    fig.update_layout(barmode="group")
+    fig.update_xaxes(title="Progress", ticksuffix="%", range=[0, 105])
+    fig.update_yaxes(autorange="reversed")
+    return _v80_chart_style(fig, height=300)
+
+
+def _current_cost_by_scope_figure_v81(assessments: List[Dict[str, Any]]) -> go.Figure:
+    scopes = [_scope_chart_label_v76(a.get("scope")) for a in assessments]
+    metrics = [
+        ("Potential FC", "potential_forecast", "#c73535"),
+        ("VOWD", "vowd", "#14805e"),
+        ("ETC", "etc", "#7c3aed"),
+    ]
+    fig = go.Figure()
+    for label, key, color in metrics:
+        values = [(_safe_float((a.get("cost") or {}).get(key)) or 0.0) / 1_000_000.0 for a in assessments]
+        fig.add_trace(go.Bar(
+            name=label, x=scopes, y=values, marker_color=color,
+            hovertemplate=f"{label}<br>EUR %{{y:,.2f}}m<extra></extra>",
+        ))
+    fig.update_layout(barmode="group")
+    fig.add_hline(y=0, line_color="#98a2b3", line_width=1)
+    fig.update_yaxes(title="EUR millions")
+    return _v80_chart_style(fig, height=300)
+
+
+def _control_load_rows_v81(records: List[Dict[str, Any]], assessments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    by_scope = {str(a.get("scope_id")): a for a in assessments}
+    rows: List[Dict[str, Any]] = []
+    for rec in records:
+        scope_id = str(rec.get("scope_id") or "")
+        assessment = by_scope.get(scope_id) or {}
+        rows.append({
+            "scope_id": scope_id, "scope": _scope_chart_label_v76(_scope_label_v32(scope_id)),
+            "Quality": len(rec.get("quality_items", []) or []),
+            "Engineering": len(rec.get("engineering_items", []) or []),
+            "Interfaces": len(rec.get("interface_items", []) or []),
+            "Slipped milestones": int((assessment.get("baseline") or {}).get("slipped", 0) or 0),
+        })
+    return rows
+
+
+def _current_control_load_figure_v81(records: List[Dict[str, Any]], assessments: List[Dict[str, Any]]) -> go.Figure:
+    rows = _control_load_rows_v81(records, assessments)
+    colors = {"Quality": "#7c3aed", "Engineering": "#2563eb", "Interfaces": "#d97706", "Slipped milestones": "#c73535"}
+    fig = go.Figure()
+    for metric in ("Quality", "Engineering", "Interfaces", "Slipped milestones"):
+        fig.add_trace(go.Bar(
+            name=metric, x=[row[metric] for row in rows], y=[row["scope"] for row in rows], orientation="h",
+            marker_color=colors[metric], hovertemplate=f"{metric}: %{{x}}<extra></extra>",
+        ))
+    fig.update_layout(barmode="stack")
+    fig.update_xaxes(title="Open item count", rangemode="tozero", dtick=5)
+    fig.update_yaxes(autorange="reversed")
+    return _v80_chart_style(fig, height=300)
+
+
+def _scope_action_donut_v81(assessment: Dict[str, Any]) -> go.Figure:
+    actions = assessment.get("actions") or {}
+    labels = ["Delayed", "Near due", "On track", "TBC"]
+    values = [int(actions.get(label, 0) or 0) for label in labels]
+    colors = ["#c73535", "#d97706", "#14805e", "#98a2b3"]
+    fig = go.Figure(go.Pie(
+        labels=labels, values=values, hole=.64, sort=False, marker=dict(colors=colors),
+        textinfo="percent", textposition="inside", hovertemplate="%{label}: %{value}<br>%{percent}<extra></extra>",
+    ))
+    fig.add_annotation(text=f"<b>{sum(values)}</b><br>actions", x=.5, y=.5, showarrow=False, font=dict(size=15, color="#101828"))
+    fig.update_layout(showlegend=True)
+    return _v80_chart_style(fig, height=300)
+
+
+def _scope_progress_current_figure_v81(assessment: Dict[str, Any]) -> go.Figure:
+    disciplines = ["Construction", "Engineering"]
+    actual = [_safe_float(assessment.get("construction_actual")), _safe_float(assessment.get("engineering_actual"))]
+    forecast = [_safe_float(assessment.get("construction_forecast")), _safe_float(assessment.get("engineering_forecast"))]
+    deviation = [_safe_float(assessment.get("construction_dev")), _safe_float(assessment.get("engineering_dev"))]
+    custom = [["N/A" if value is None else f"{value:+.2f}%"] for value in deviation]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Actual", x=actual, y=disciplines, orientation="h", marker_color="#2563eb", customdata=custom,
+        text=["" if value is None else f"{value:.1f}%" for value in actual], textposition="inside",
+        hovertemplate="Actual %{x:.2f}%<br>Deviation %{customdata[0]}<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        name="Forecast", x=forecast, y=disciplines, orientation="h", marker_color="#cfd6e4", customdata=custom,
+        text=["" if value is None else f"{value:.1f}%" for value in forecast], textposition="inside",
+        hovertemplate="Forecast %{x:.2f}%<br>Deviation %{customdata[0]}<extra></extra>",
+    ))
+    fig.update_layout(barmode="group")
+    fig.update_xaxes(title="Progress", ticksuffix="%", range=[0, 105])
+    fig.update_yaxes(autorange="reversed")
+    return _v80_chart_style(fig, height=300)
+
+
+def _scope_control_load_figure_v81(rec: Dict[str, Any], assessment: Dict[str, Any]) -> go.Figure:
+    labels = ["Quality", "Engineering", "Interfaces", "Slipped milestones"]
+    values = [
+        len(rec.get("quality_items", []) or []), len(rec.get("engineering_items", []) or []),
+        len(rec.get("interface_items", []) or []), int((assessment.get("baseline") or {}).get("slipped", 0) or 0),
+    ]
+    colors = ["#7c3aed", "#2563eb", "#d97706", "#c73535"]
+    fig = go.Figure(go.Bar(
+        x=labels, y=values, marker_color=colors, text=values, textposition="outside",
+        hovertemplate="%{x}: %{y}<extra></extra>",
+    ))
+    fig.update_yaxes(title="Open item count", rangemode="tozero", dtick=2)
+    return _v80_chart_style(fig, height=300)
+
+
+def _progress_level_history_figure_v81(selected_year: int, selected_week: int, scope_id: str) -> go.Figure:
+    df = _history_through_v80(selected_year, selected_week, scope_id)
+    fig = go.Figure()
+    series = [
+        ("Construction actual", "#2563eb", "solid"), ("Construction forecast", "#2563eb", "dot"),
+        ("Engineering actual", "#14805e", "solid"), ("Engineering forecast", "#14805e", "dot"),
+    ]
+    for metric, color, dash in series:
+        if metric not in df.columns:
+            continue
+        fig.add_trace(go.Scatter(
+            x=df["Period"], y=df[metric], mode="lines+markers", name=metric,
+            line=dict(color=color, width=2.4, dash=dash), marker=dict(size=5),
+            hovertemplate=f"{metric}<br>%{{y:.2f}}%<extra></extra>",
+        ))
+    fig.update_yaxes(title="Progress", ticksuffix="%", range=[0, 105])
+    return _v80_chart_style(fig, height=310)
+
+
+def render_executive_overview(bundle: Dict[str, Any], profiles: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp] = None) -> None:
+    records = build_scope_records(bundle, profiles, selected_year, selected_week, scopes=CONTROL_SCOPES)
+    records = [rec for rec in records if rec.get("scope_id") in {"rail", "ponds", "roads"}]
+    cutoff = current_date if current_date is not None else selected_cutoff_date(filter_bundle_until(bundle, selected_year, selected_week))
+    st.session_state["selected_cutoff_v32"] = cutoff
+    assessments = [_pm_scope_assessment(rec, selected_year, selected_week, cutoff) for rec in records]
+    action_rows = _v80_action_rows(records, selected_year, selected_week, cutoff)
+    month = _active_month_label_v29()
+    _v80_period_head("Current status", selected_year, selected_week, month)
+    cards = []
+    for label, status, tone in (("Delayed", "Delayed", "critical"), ("Near due", "Near due", "watch"), ("On track", "On track", "good"), ("TBC", "TBC", "")):
+        rows = [row for row in action_rows if row.get("status") == status]
+        cards.append(_v80_kpi(label, str(len(rows)), "Click for current list", tone, rows))
+    deviations = [(a.get("scope"), _safe_float(a.get("construction_dev"))) for a in assessments if _safe_float(a.get("construction_dev")) is not None]
+    worst_scope, worst_dev = min(deviations, key=lambda item: item[1]) if deviations else ("N/A", None)
+    portfolio = _active_history_row("all")
+    cards.append(_v80_kpi("Worst construction dev", _pm_pp(worst_dev), str(worst_scope), "critical" if (worst_dev or 0) < 0 else "good"))
+    cards.append(_v80_kpi("Portfolio ETC", _fmt_money(portfolio.get("ETC")), month, "primary"))
+    st.markdown("<div class='v80-kpi-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+    by_scope = {str(a.get("scope_id")): a for a in assessments}
+    st.markdown("<div class='v80-scope-grid'>" + "".join(_v80_scope_card(rec, by_scope[str(rec.get("scope_id"))], selected_year, selected_week, cutoff) for rec in records) + "</div>", unsafe_allow_html=True)
+
+    _v80_period_head("Current comparisons", selected_year, selected_week, month)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Action mix by scope", "Current week")
+        _plot_decision_chart_v76(_current_action_mix_figure_v81(assessments), "v81_overview_action_mix")
+    with right:
+        _chart_header_v76("Progress actual vs forecast", "Construction and engineering")
+        _plot_decision_chart_v76(_current_progress_figure_v81(assessments), "v81_overview_progress_current")
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Cost position by scope", "Potential FC, signed VOWD and ETC")
+        _plot_decision_chart_v76(_current_cost_by_scope_figure_v81(assessments), "v81_overview_cost_current")
+    with right:
+        _chart_header_v76("Open control load", "Gates, interfaces and slipped milestones")
+        _plot_decision_chart_v76(_current_control_load_figure_v81(records, assessments), "v81_overview_controls_current")
+
+    _v80_period_head("History", selected_year, selected_week, month)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Actions over time", "Delayed plus near due")
+        _plot_decision_chart_v76(_actions_history_figure_v80(selected_year, selected_week), "v81_overview_actions_history")
+    with right:
+        _chart_header_v76("Progress deviation over time", "Actual minus forecast")
+        _plot_decision_chart_v76(_progress_history_figure_v80(selected_year, selected_week), "v81_overview_progress_history")
+    _chart_header_v76("Cost movement over time", "Potential FC, signed VOWD and ETC")
+    _plot_decision_chart_v76(_cost_history_figure_v80("all", ["Potential forecast", "VOWD", "ETC"]), "v81_overview_cost_history")
+
+    with st.expander(f"Current action register - {selected_year} W{int(selected_week):02d}", expanded=False):
+        _render_action_register_v80(records, selected_year, selected_week, cutoff, "v81_overview_actions_table")
+    with st.expander("Current milestones", expanded=False):
+        render_milestone_timeline(records, title="Milestones", selected_year=selected_year, selected_week=selected_week, current_date=cutoff)
+
+
+def render_scope_sections(rec: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp] = None) -> None:
+    rec = _with_display_scope(rec)
+    scope_id = str(rec.get("scope_id") or "")
+    scope_name = _scope_label_v32(scope_id)
+    assessment = _pm_scope_assessment(rec, selected_year, selected_week, current_date)
+    actions = assessment.get("actions") or {}
+    action_rows = list(actions.get("rows") or [])
+    cost = assessment.get("cost") or {}
+    month = _active_month_label_v29()
+    st.markdown(f"<div class='rc-v80-scope-title'><h2>{_html(scope_name)}</h2></div>", unsafe_allow_html=True)
+    _v80_period_head("Current status", selected_year, selected_week, month)
+    attention_rows = [row for row in action_rows if row.get("status") in {"Delayed", "Near due"}]
+    deviations = [("Construction", _safe_float(assessment.get("construction_dev"))), ("Engineering", _safe_float(assessment.get("engineering_dev")))]
+    discipline, worst_dev = min(deviations, key=lambda item: item[1] if item[1] is not None else 999.0)
+    cards = [
+        _v80_kpi("Actions requiring attention", str(len(attention_rows)), "Click for list", "critical" if attention_rows else "good", attention_rows),
+        _v80_kpi("Worst progress dev", _pm_pp(worst_dev), discipline, "critical" if (worst_dev or 0) < 0 else "good"),
+        _v80_kpi("Open controls", str(len(rec.get("quality_items", []) or []) + len(rec.get("engineering_items", []) or []) + len(rec.get("interface_items", []) or [])), "Quality, engineering, interfaces", "watch"),
+        _v80_kpi("ETC", _fmt_money(cost.get("etc")), month, "primary"),
+    ]
+    st.markdown("<div class='v80-kpi-grid v81-kpi-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Action status", "Current week")
+        _plot_decision_chart_v76(_scope_action_donut_v81(assessment), f"v81_scope_action_mix_{scope_id}")
+    with right:
+        _chart_header_v76("Progress actual vs forecast", "Current week")
+        _plot_decision_chart_v76(_scope_progress_current_figure_v81(assessment), f"v81_scope_progress_current_{scope_id}")
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Open control load", "Current items")
+        _plot_decision_chart_v76(_scope_control_load_figure_v81(rec, assessment), f"v81_scope_controls_{scope_id}")
+    with right:
+        _chart_header_v76("Current cost bridge", "ETC = Potential FC + VOWD")
+        _plot_decision_chart_v76(_cost_waterfall_figure_v80(scope_id), f"v81_scope_cost_bridge_{scope_id}")
+
+    _v80_period_head("History", selected_year, selected_week, month)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Progress levels", "Actual and forecast")
+        _plot_decision_chart_v76(_progress_level_history_figure_v81(selected_year, selected_week, scope_id), f"v81_scope_progress_levels_{scope_id}")
+    with right:
+        _chart_header_v76("Progress deviation", "Actual minus forecast")
+        _plot_decision_chart_v76(_progress_history_figure_v80(selected_year, selected_week, scope_id), f"v81_scope_progress_deviation_{scope_id}")
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Actions over time", "Hover for full status mix")
+        _plot_decision_chart_v76(_actions_history_figure_v80(selected_year, selected_week, scope_id), f"v81_scope_actions_history_{scope_id}")
+    with right:
+        _chart_header_v76("Cost over time", "Potential FC, signed VOWD and ETC")
+        _plot_decision_chart_v76(_cost_history_figure_v80(scope_id, ["Potential forecast", "VOWD", "ETC"]), f"v81_scope_cost_history_{scope_id}")
+
+    with st.expander(f"Current action register - {selected_year} W{int(selected_week):02d}", expanded=False):
+        _render_action_register_v80([rec], selected_year, selected_week, current_date, f"v81_scope_actions_table_{scope_id}")
+    with st.expander("Current milestones", expanded=False):
+        render_milestone_timeline([rec], scope_filter=scope_id, title="Milestones", selected_year=selected_year, selected_week=selected_week, current_date=current_date)
+    with st.expander("Baseline detail", expanded=False):
+        render_scope_baseline_section(rec, selected_year, selected_week)
+    with st.expander(f"Current cost drivers - {month}", expanded=False):
+        _copyable_table_component(["Package", "Description", "Supplier", "Budget", "CO", "Forecast", "Exposure", "Potential forecast", "Driver / note"], _cost_driver_rows(scope_id), numeric_cols={3, 4, 5, 6, 7}, key_prefix=f"v81_scope_drivers_{scope_id}")
+
+
 def main() -> None:
     st.markdown(V78_LAYER_CSS, unsafe_allow_html=True)
     st.markdown(V80_MANAGEMENT_CSS, unsafe_allow_html=True)
+    st.markdown(V81_VISUAL_CSS, unsafe_allow_html=True)
     _ensure_cost_cache_current_v79()
     if "bundle" not in st.session_state:
         st.session_state["bundle"] = cached_bundle(DATA_PATH.stat().st_mtime_ns)
@@ -27672,7 +28010,6 @@ def main() -> None:
         "<div class='footer-note'>Data sources: weekly progress reports through 2026 W31, monthly cost controls through July 2026, and BL CC E006 schedule baseline. Scope is limited to Rail On Site (ROS), Ponds and Roads.</div>",
         unsafe_allow_html=True,
     )
-    _reset_main_scroll_v37()
 
 
 if __name__ == "__main__":
