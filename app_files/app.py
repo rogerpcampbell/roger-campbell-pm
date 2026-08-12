@@ -27664,8 +27664,27 @@ V81_VISUAL_CSS = """
 }
 .v81-panel-link:hover{border-color:#6f2dbd;background:#fbf8ff;color:#351258!important;}
 .v81-panel-link.active{border-color:#17121f;background:#17121f;color:#fff!important;box-shadow:0 5px 14px rgba(17,18,31,.16);}
+.v80-scope-row.v82-visual-row{align-items:start;padding:9px 0;}
+.v82-progress-visual,.v82-cost-visual{display:grid;gap:7px;min-width:0;}
+.v82-progress-meta{display:grid;grid-template-columns:minmax(72px,1fr) auto auto auto;align-items:center;gap:6px;}
+.v80-scope-row .v82-progress-meta strong,.v80-scope-row .v82-cost-meta strong{color:#344054;font-size:.66rem;font-weight:900;}
+.v80-scope-row .v82-progress-meta span,.v80-scope-row .v82-cost-meta span{
+  color:#667085;font-size:.60rem;font-weight:850;text-transform:none;white-space:nowrap;
+}
+.v80-scope-row .v82-progress-meta em{min-width:43px;border-radius:5px;padding:2px 4px;font-size:.59rem;font-style:normal;font-weight:950;text-align:center;}
+.v82-progress-meta em.negative{background:#fff0f0;color:#b42318;}.v82-progress-meta em.positive{background:#edf9f3;color:#067647;}
+.v82-progress-track{position:relative;height:7px;border-radius:3px;background:#e4e7ec;overflow:visible;}
+.v82-progress-fill{display:block;height:7px;border-radius:3px;background:#3567e8;}
+.v82-progress-fc{position:absolute;top:-3px;width:2px;height:13px;background:#101828;border-radius:1px;transform:translateX(-1px);}
+.v82-cost-meta{display:grid;grid-template-columns:minmax(72px,1fr) auto;align-items:center;gap:7px;}
+.v82-cost-track{height:6px;border-radius:3px;background:#eef1f5;overflow:hidden;}
+.v82-cost-track i{display:block;height:100%;border-radius:3px;}.v82-cost-track.pfc i{background:#c73535;}.v82-cost-track.vowd i{background:#14805e;}.v82-cost-track.etc i{background:#6941c6;}
+.v82-control-visual{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.v82-control-chip{border:1px solid #e0e5ee;border-radius:7px;background:#f8fafc;padding:7px 8px;min-width:0;}
+.v80-scope-row .v82-control-chip span{display:block;color:#667085;font-size:.54rem;font-weight:950;text-transform:uppercase;white-space:nowrap;}
+.v82-control-chip b{display:block;margin-top:4px!important;color:#101828!important;font-size:.82rem!important;line-height:1!important;}
 @media(max-width:1050px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
-@media(max-width:560px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+@media(max-width:560px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}.v82-progress-meta{grid-template-columns:minmax(66px,1fr) auto auto auto;gap:4px;}}
 </style>
 """
 
@@ -27698,6 +27717,79 @@ def render_sidebar(bundle: Dict[str, Any]) -> Tuple[str, int, int]:
     st.sidebar.markdown(f"<div class='nav-active'>Current panel: {_html(st.session_state['panel_choice'])}</div>", unsafe_allow_html=True)
     year, week = _selected_period_from_state_v32(st.session_state.get("bundle", bundle))
     return st.session_state["panel_choice"], int(year), int(week)
+
+
+def _scope_progress_item_v82(label: str, actual: Any, forecast: Any, deviation: Any) -> str:
+    actual_num = _safe_float(actual)
+    forecast_num = _safe_float(forecast)
+    deviation_num = _safe_float(deviation)
+    actual_width = max(0.0, min(100.0, actual_num or 0.0))
+    forecast_left = max(0.0, min(100.0, forecast_num or 0.0))
+    deviation_class = "positive" if deviation_num is not None and deviation_num >= 0 else "negative"
+    return (
+        "<div class='v82-progress-item'>"
+        f"<div class='v82-progress-meta'><strong>{_html(label)}</strong>"
+        f"<span title='Actual progress'>A {_html(_pm_pct(actual_num))}</span>"
+        f"<span title='Forecast progress'>FC {_html(_pm_pct(forecast_num))}</span>"
+        f"<em class='{deviation_class}' title='Actual minus forecast'>{_html(_pm_pp(deviation_num))}</em></div>"
+        f"<div class='v82-progress-track' title='{_html(label)}: actual {_pm_pct(actual_num)}, forecast {_pm_pct(forecast_num)}'>"
+        f"<i class='v82-progress-fill' style='width:{actual_width:.2f}%'></i>"
+        f"<i class='v82-progress-fc' style='left:{forecast_left:.2f}%'></i></div></div>"
+    )
+
+
+def _scope_cost_item_v82(label: str, value: Any, scale: float, css_class: str) -> str:
+    number = _safe_float(value)
+    width = 0.0 if number is None else max(0.0, min(100.0, abs(number) / max(scale, 1.0) * 100.0))
+    return (
+        "<div class='v82-cost-item'>"
+        f"<div class='v82-cost-meta'><strong>{_html(label)}</strong><span>{_html(_fmt_money(number))}</span></div>"
+        f"<div class='v82-cost-track {css_class}'><i style='width:{width:.2f}%'></i></div></div>"
+    )
+
+
+def _v80_scope_card(rec: Dict[str, Any], assessment: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
+    scope_id = str(rec.get("scope_id") or "")
+    actions = assessment.get("actions") or {}
+    rows = list(actions.get("rows") or [])
+    cost = assessment.get("cost") or {}
+    baseline = assessment.get("baseline") or {}
+    progress_visual = (
+        "<div class='v82-progress-visual'>"
+        + _scope_progress_item_v82("Construction", assessment.get("construction_actual"), assessment.get("construction_forecast"), assessment.get("construction_dev"))
+        + _scope_progress_item_v82("Engineering", assessment.get("engineering_actual"), assessment.get("engineering_forecast"), assessment.get("engineering_dev"))
+        + "</div>"
+    )
+    cost_values = [cost.get("potential_forecast"), cost.get("vowd"), cost.get("etc")]
+    cost_scale = max([abs(value) for value in (_safe_float(item) for item in cost_values) if value is not None] or [1.0])
+    cost_visual = (
+        "<div class='v82-cost-visual' title='ETC equals Potential FC plus signed VOWD'>"
+        + _scope_cost_item_v82("Potential FC", cost.get("potential_forecast"), cost_scale, "pfc")
+        + _scope_cost_item_v82("VOWD", cost.get("vowd"), cost_scale, "vowd")
+        + _scope_cost_item_v82("ETC", cost.get("etc"), cost_scale, "etc")
+        + "</div>"
+    )
+    open_gates = int(assessment.get("open_gates") or 0)
+    max_delay = int(baseline.get("max_delay") or 0)
+    controls_visual = (
+        "<div class='v82-control-visual'>"
+        f"<div class='v82-control-chip'><span>Open gates</span><b>{open_gates}</b></div>"
+        f"<div class='v82-control-chip'><span>Max slip</span><b>+{max_delay}d</b></div></div>"
+    )
+    tone = str(assessment.get("tone") or "watch")
+    return (
+        "<div class='v80-scope-card'>"
+        f"<h3>{_html(assessment.get('scope'))}{_scope_link_v32(scope_id, '>')}</h3>"
+        f"<span class='v80-status {tone}'>{_html(assessment.get('label'))}</span>"
+        "<div class='v80-action-row'>"
+        f"{_v80_action_chip('Delayed', rows, 'Delayed')}{_v80_action_chip('Near due', rows, 'Near due')}"
+        f"{_v80_action_chip('On track', rows, 'On track')}{_v80_action_chip('TBC', rows, 'TBC')}"
+        "</div><div class='v80-scope-rows'>"
+        f"<div class='v80-scope-row v82-visual-row'><span>Progress</span>{progress_visual}</div>"
+        f"<div class='v80-scope-row v82-visual-row'><span>Cost</span>{cost_visual}</div>"
+        f"<div class='v80-scope-row v82-visual-row'><span>Controls</span>{controls_visual}</div>"
+        "</div></div>"
+    )
 
 
 def _current_action_mix_figure_v81(assessments: List[Dict[str, Any]]) -> go.Figure:
