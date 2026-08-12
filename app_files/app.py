@@ -23137,18 +23137,17 @@ def _heatmap_pressure_marker_v55(value: Any) -> str:
 
 
 def _pm_heatmap_matrix_v55(assessments: List[Dict[str, Any]]) -> Tuple[List[str], List[str], List[List[float]]]:
-    metrics = ["Actions", "Progress", "Gates", "Baseline", "Cost"]
+    metrics = ["Actions", "Progress", "Gates", "Cost"]
     scopes = [str(a.get("scope") or "Scope") for a in assessments]
     raw_actions = [float((a.get("actions") or {}).get("Delayed", 0)) * 2.0 + float((a.get("actions") or {}).get("Near due", 0)) for a in assessments]
     raw_gates = [float(a.get("open_gates") or 0.0) for a in assessments]
-    raw_baseline = [float((a.get("baseline") or {}).get("max_delay", 0.0) or 0.0) for a in assessments]
     raw_cost = [float((a.get("cost") or {}).get("exposure_pct") or 0.0) for a in assessments]
     progress = []
     for a in assessments:
         con = _safe_float(a.get("construction_dev"))
         eng = _safe_float(a.get("engineering_dev"))
         progress.append(10.0 if (con is not None and con < 0) or (eng is not None and eng < 0) else 0.0)
-    columns = [_relative_scores_v43(raw_actions), progress, _relative_scores_v43(raw_gates), _relative_scores_v43(raw_baseline), _relative_scores_v43(raw_cost)]
+    columns = [_relative_scores_v43(raw_actions), progress, _relative_scores_v43(raw_gates), _relative_scores_v43(raw_cost)]
     z = [[columns[col][row] for col in range(len(metrics))] for row in range(len(scopes))]
     return metrics, scopes, z
 
@@ -27205,7 +27204,7 @@ _cost_numbers_v80_base = _cost_numbers
 
 def _signed_vowd_v80(value: Any) -> Optional[float]:
     number = _safe_float(value)
-    return None if number is None else -abs(number)
+    return None if number is None else abs(number)
 
 
 def _canonical_cost_numbers_v80(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -27218,14 +27217,14 @@ def _canonical_cost_numbers_v80(values: Dict[str, Any]) -> Dict[str, Any]:
     if exposure is None and potential_fc is not None and forecast is not None:
         exposure = potential_fc - forecast
     vowd = _signed_vowd_v80(out.get("vowd"))
-    etc = potential_fc + vowd if potential_fc is not None and vowd is not None else None
+    etc = potential_fc - vowd if potential_fc is not None and vowd is not None else None
     out.update({
         "potential_exposure": exposure,
         "potential_forecast": potential_fc,
         "vowd": vowd,
         "forecast_minus_vowd": etc,
         "etc": etc,
-        "display_note": "ETC = Potential FC + VOWD. VOWD is displayed as a negative cost movement.",
+        "display_note": "ETC = Potential FC - VOWD.",
     })
     return out
 
@@ -27244,7 +27243,7 @@ def _pm_cost_metrics(scope_id: str) -> Dict[str, Any]:
     exposure = _safe_float(row.get("Potential exposure"))
     potential_fc = _safe_float(row.get("Potential forecast"))
     vowd = _signed_vowd_v80(row.get("VOWD"))
-    etc = potential_fc + vowd if potential_fc is not None and vowd is not None else _safe_float(row.get("ETC"))
+    etc = potential_fc - vowd if potential_fc is not None and vowd is not None else _safe_float(row.get("ETC"))
     return {
         "budget": budget,
         "forecast": forecast,
@@ -27473,7 +27472,12 @@ def _cost_history_figure_v80(scope_id: str, metrics: List[str], height: int = 31
         for metric in metrics:
             if metric not in df.columns:
                 continue
-            values = pd.to_numeric(df[metric], errors="coerce") / 1_000_000.0
+            if metric == "VOWD":
+                values = pd.to_numeric(df[metric], errors="coerce").abs() / 1_000_000.0
+            elif metric == "ETC" and {"Potential forecast", "VOWD"}.issubset(df.columns):
+                values = (pd.to_numeric(df["Potential forecast"], errors="coerce") - pd.to_numeric(df["VOWD"], errors="coerce").abs()) / 1_000_000.0
+            else:
+                values = pd.to_numeric(df[metric], errors="coerce") / 1_000_000.0
             fig.add_trace(go.Scatter(
                 x=df["Month"].astype(str), y=values, mode="lines+markers", name=("Potential FC" if metric == "Potential forecast" else metric),
                 line=dict(color=colors.get(metric, "#667085"), width=2.6), marker=dict(size=7),
@@ -27500,14 +27504,15 @@ def _cost_waterfall_figure_v80(scope_id: str, cost_data: Optional[Dict[str, Any]
     exposure = _safe_float(values.get("potential_exposure")) or 0.0
     potential_fc = _safe_float(values.get("potential_forecast")) or forecast + exposure
     vowd = _signed_vowd_v80(values.get("vowd")) or 0.0
-    etc = potential_fc + vowd
+    etc = potential_fc - vowd
     labels = ["Budget", "CO", "Forecast", "Exposure", "Potential FC", "VOWD", "ETC"]
-    amounts = [budget, co, forecast, exposure, potential_fc, vowd, etc]
+    amounts = [budget, co, forecast, exposure, potential_fc, -vowd, etc]
     fig = go.Figure(go.Waterfall(
         x=labels, y=[v / 1_000_000.0 for v in amounts], measure=["absolute", "relative", "total", "relative", "total", "relative", "total"],
-        text=[_fmt_money(v) for v in amounts], textposition="outside", connector={"line": {"color": "#98a2b3", "width": 1}},
+        customdata=[abs(v) / 1_000_000.0 for v in [budget, co, forecast, exposure, potential_fc, vowd, etc]],
+        text=[_fmt_money(v) for v in [budget, co, forecast, exposure, potential_fc, vowd, etc]], textposition="outside", connector={"line": {"color": "#98a2b3", "width": 1}},
         increasing={"marker": {"color": "#14805e"}}, decreasing={"marker": {"color": "#c73535"}}, totals={"marker": {"color": "#2563eb"}},
-        hovertemplate="<b>%{x}</b><br>EUR %{y:,.2f}m<extra></extra>",
+        hovertemplate="<b>%{x}</b><br>EUR %{customdata:,.2f}m<extra></extra>",
     ))
     fig.update_yaxes(title="EUR millions")
     return _v80_chart_style(fig, height=330)
@@ -27663,11 +27668,12 @@ V81_VISUAL_CSS = """
 .v81-panel-link.active{border-color:#17121f;background:#17121f;color:#fff!important;box-shadow:0 5px 14px rgba(17,18,31,.16);}
 .v80-scope-row.v82-visual-row{align-items:start;padding:9px 0;}
 .v82-progress-visual,.v82-cost-visual{display:grid;gap:7px;min-width:0;}
-.v82-progress-meta{display:grid;grid-template-columns:minmax(72px,1fr) auto auto auto;align-items:center;gap:6px;}
+.v82-progress-meta{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 7px;}
 .v80-scope-row .v82-progress-meta strong,.v80-scope-row .v82-cost-meta strong{color:#344054;font-size:.66rem;font-weight:900;}
-.v80-scope-row .v82-progress-meta span,.v80-scope-row .v82-cost-meta span{
+.v80-scope-row .v82-progress-values span,.v80-scope-row .v82-cost-meta span{
   color:#667085;font-size:.60rem;font-weight:850;text-transform:none;white-space:nowrap;
 }
+.v82-progress-values{display:flex;align-items:center;gap:8px;grid-column:1/-1;}
 .v80-scope-row .v82-progress-meta em{min-width:43px;border-radius:5px;padding:2px 4px;font-size:.59rem;font-style:normal;font-weight:950;text-align:center;}
 .v82-progress-meta em.negative{background:#fff0f0;color:#b42318;}.v82-progress-meta em.positive{background:#edf9f3;color:#067647;}
 .v82-progress-track{position:relative;height:7px;border-radius:3px;background:#e4e7ec;overflow:visible;}
@@ -27683,8 +27689,8 @@ V81_VISUAL_CSS = """
 .v80-scope-card h3{margin-right:0!important;}
 .v84-scope-card{min-width:0;border:1px solid #d7ddea;border-radius:8px;background:#fff;padding:14px;box-shadow:0 6px 18px rgba(16,24,40,.05);}
 .v84-scope-card h3{margin:0 0 12px;color:#101828;font-size:1rem;line-height:1.2;font-weight:950;letter-spacing:0;}
-.v84-scope-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:13px;}
-.v84-scope-metric{min-width:0;border:1px solid #e0e5ee;border-radius:7px;background:#f8fafc;padding:8px;}
+.v84-scope-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:13px;}
+.v84-scope-metric{position:relative;min-width:0;border:1px solid #e0e5ee;border-radius:7px;background:#f8fafc;padding:8px;}
 .v84-scope-metric span{display:block;color:#667085;font-size:.55rem;line-height:1.15;font-weight:950;text-transform:uppercase;}
 .v84-scope-metric b{display:block;margin-top:5px;color:#101828;font-size:.92rem;line-height:1;font-weight:950;letter-spacing:0;}
 .v84-completion{display:grid;gap:11px;border-top:1px solid #eaecf0;padding-top:11px;}
@@ -27695,9 +27701,17 @@ V81_VISUAL_CSS = """
 .v84-track-labels{display:flex;justify-content:space-between;gap:8px;margin-top:4px;color:#667085;font-size:.58rem;font-weight:800;}
 .v84-etc-rate{margin-top:1px;border-radius:6px;background:#f4f0ff;color:#4a1d78;padding:7px 9px;font-size:.64rem;font-weight:900;text-align:center;}
 .v84-waterfall-title{margin:4px 0 0;color:#101828;font-size:.83rem;font-weight:950;text-align:left;}
+.v85-trend-card{cursor:default;}
+.v85-trend-tip{display:none;position:absolute;z-index:1900000;left:0;top:calc(100% + 7px);width:235px;padding:10px;border-radius:7px;background:#101828;color:#fff;box-shadow:0 12px 30px rgba(16,24,40,.28);}
+.v85-trend-card:hover .v85-trend-tip{display:block;}
+.v84-scope-metric:first-child .v85-trend-tip{top:auto;bottom:calc(100% + 7px);}
+.v85-trend-tip h4{margin:0 0 8px;font-size:.68rem;line-height:1.2;color:#fff;font-weight:900;}
+.v85-trend-row{display:grid;grid-template-columns:44px minmax(0,1fr) 52px;align-items:center;gap:6px;margin:5px 0;}
+.v84-scope-metric .v85-trend-row span,.v84-scope-metric .v85-trend-row em{color:#e5e7eb;font-size:.56rem;line-height:1;font-style:normal;font-weight:800;text-transform:none;}
+.v85-trend-row em{text-align:right;}.v85-trend-track{height:5px;border-radius:3px;background:#344054;overflow:hidden;}.v85-trend-track i{display:block;height:100%;border-radius:3px;}
 @media(min-width:1100px){.v80-scope-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
 @media(max-width:1050px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
-@media(max-width:560px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}.v82-progress-meta{grid-template-columns:minmax(66px,1fr) auto auto auto;gap:4px;}}
+@media(max-width:560px){.v81-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
 </style>
 """
 
@@ -27729,9 +27743,9 @@ def _scope_progress_item_v82(label: str, actual: Any, forecast: Any, deviation: 
     return (
         "<div class='v82-progress-item'>"
         f"<div class='v82-progress-meta'><strong>{_html(label)}</strong>"
-        f"<span title='Actual progress'>A {_html(_pm_pct(actual_num))}</span>"
-        f"<span title='Forecast progress'>FC {_html(_pm_pct(forecast_num))}</span>"
-        f"<em class='{deviation_class}' title='Actual minus forecast'>{_html(_pm_pp(deviation_num))}</em></div>"
+        f"<em class='{deviation_class}' title='Actual minus forecast'>{_html(_pm_pp(deviation_num))}</em>"
+        f"<div class='v82-progress-values'><span title='Actual progress'>Actual {_html(_pm_pct(actual_num))}</span>"
+        f"<span title='Forecast progress'>Forecast {_html(_pm_pct(forecast_num))}</span></div></div>"
         f"<div class='v82-progress-track' title='{_html(label)}: actual {_pm_pct(actual_num)}, forecast {_pm_pct(forecast_num)}'>"
         f"<i class='v82-progress-fill' style='width:{actual_width:.2f}%'></i>"
         f"<i class='v82-progress-fc' style='left:{forecast_left:.2f}%'></i></div></div>"
@@ -27754,6 +27768,46 @@ def _weekly_construction_gain_v84(scope_id: str, selected_year: int, selected_we
     return float(values.iloc[-1] - values.iloc[-2]) if len(values) >= 2 else None
 
 
+def _trend_tip_v85(title: str, points: List[Tuple[str, Optional[float]]], value_type: str) -> str:
+    clean = [(str(label), _safe_float(value)) for label, value in points if _safe_float(value) is not None][-6:]
+    if not clean:
+        return f"<div class='v85-trend-tip'><h4>{_html(title)}</h4><div>No history available</div></div>"
+    scale = max([abs(value) for _label, value in clean] or [1.0])
+    rows = []
+    for label, value in clean:
+        width = max(3.0, abs(value) / max(scale, 1e-9) * 100.0)
+        color = "#ef4444" if value < 0 else ("#22c55e" if value_type == "percent" else "#38bdf8")
+        display = f"{value:+.1f}%" if value_type == "percent" else _fmt_money(abs(value))
+        rows.append(
+            f"<div class='v85-trend-row'><span>{_html(label)}</span>"
+            f"<div class='v85-trend-track'><i style='width:{width:.2f}%;background:{color}'></i></div>"
+            f"<em>{_html(display)}</em></div>"
+        )
+    return f"<div class='v85-trend-tip'><h4>{_html(title)}</h4>{''.join(rows)}</div>"
+
+
+def _weekly_progress_trend_v85(scope_id: str, selected_year: int, selected_week: int) -> List[Tuple[str, Optional[float]]]:
+    history = _history_through_v80(selected_year, selected_week, scope_id).tail(7)
+    if history.empty or "Construction actual" not in history.columns:
+        return []
+    values = pd.to_numeric(history["Construction actual"], errors="coerce")
+    periods = history["Period"].astype(str).tolist()
+    return [(periods[index], values.iloc[index] - values.iloc[index - 1]) for index in range(1, len(values)) if pd.notna(values.iloc[index]) and pd.notna(values.iloc[index - 1])]
+
+
+def _vowd_trend_v85(scope_id: str) -> List[Tuple[str, Optional[float]]]:
+    history = _history_for_scope(scope_id).copy()
+    if history.empty or "VOWD" not in history.columns:
+        return []
+    if "Date" in history.columns:
+        history = history.sort_values("Date", na_position="last")
+    active_month = _active_month_label_v29()
+    if active_month in set(history["Month"].astype(str)):
+        active_index = history.index[history["Month"].astype(str) == active_month].tolist()[-1]
+        history = history.loc[:active_index]
+    return [(str(row.get("Month")), abs(_safe_float(row.get("VOWD")) or 0.0)) for _, row in history.tail(6).iterrows()]
+
+
 def _v80_scope_card(rec: Dict[str, Any], assessment: Dict[str, Any], selected_year: int, selected_week: int, current_date: Optional[pd.Timestamp]) -> str:
     scope_id = str(rec.get("scope_id") or "")
     cost = assessment.get("cost") or {}
@@ -27762,27 +27816,37 @@ def _v80_scope_card(rec: Dict[str, Any], assessment: Dict[str, Any], selected_ye
     weekly_gain = _weekly_construction_gain_v84(scope_id, selected_year, selected_week)
     open_controls = int(assessment.get("open_gates") or 0)
     vowd = abs(_safe_float(cost.get("vowd")) or 0.0)
-    etc = max(0.0, _safe_float(cost.get("etc")) or 0.0)
-    cost_total = vowd + etc
-    cost_done_pct = (vowd / cost_total * 100.0) if cost_total else 0.0
+    potential_fc = max(0.0, _safe_float(cost.get("potential_forecast")) or 0.0)
+    etc = max(0.0, potential_fc - vowd)
+    cost_done_pct = (vowd / potential_fc * 100.0) if potential_fc else 0.0
     cost_remaining_pct = max(0.0, 100.0 - cost_done_pct)
     etc_per_remaining_point = (etc / remaining) if remaining > 0 else None
-    weekly_text = "N/A" if weekly_gain is None else f"{weekly_gain:+.1f} pp"
+    weekly_text = "N/A" if weekly_gain is None else f"{weekly_gain:+.1f}%"
     rate_text = "N/A" if etc_per_remaining_point is None else _fmt_money(etc_per_remaining_point)
+    weekly_tip = _trend_tip_v85("Construction progress - last 6 weeks", _weekly_progress_trend_v85(scope_id, selected_year, selected_week), "percent")
+    vowd_tip = _trend_tip_v85("VOWD - last 6 months", _vowd_trend_v85(scope_id), "money")
+    progress_visual = (
+        "<div class='v82-progress-visual'>"
+        + _scope_progress_item_v82("Construction", assessment.get("construction_actual"), assessment.get("construction_forecast"), assessment.get("construction_dev"))
+        + _scope_progress_item_v82("Engineering", assessment.get("engineering_actual"), assessment.get("engineering_forecast"), assessment.get("engineering_dev"))
+        + "</div>"
+    )
     return (
         "<div class='v84-scope-card'>"
         f"<h3>{_html(assessment.get('scope'))}</h3>"
         "<div class='v84-scope-metrics'>"
-        f"<div class='v84-scope-metric'><span>Weekly progress</span><b>{_html(weekly_text)}</b></div>"
+        f"<div class='v84-scope-metric v85-trend-card'><span>Weekly progress</span><b>{_html(weekly_text)}</b>{weekly_tip}</div>"
         f"<div class='v84-scope-metric'><span>Open controls</span><b>{open_controls}</b></div>"
-        f"<div class='v84-scope-metric'><span>VOWD</span><b>{_html(_fmt_money(vowd))}</b></div></div>"
+        f"<div class='v84-scope-metric v85-trend-card'><span>VOWD</span><b>{_html(_fmt_money(vowd))}</b>{vowd_tip}</div>"
+        f"<div class='v84-scope-metric'><span>Potential FC</span><b>{_html(_fmt_money(potential_fc))}</b></div></div>"
+        f"<div class='v80-scope-row v82-visual-row'><span>Progress</span>{progress_visual}</div>"
         "<div class='v84-completion'>"
         "<div><div class='v84-completion-head'><span>Construction progress</span>"
         f"<b>{progress:.1f}% complete</b></div><div class='v84-completion-track'>"
         f"<i class='v84-progress-done' style='width:{progress:.2f}%'></i></div>"
         f"<div class='v84-track-labels'><span>{progress:.1f}% complete</span><span>{remaining:.1f}% remaining</span></div></div>"
         "<div><div class='v84-completion-head'><span>Cost completion</span>"
-        f"<b>ETC {_html(_fmt_money(etc))}</b></div><div class='v84-completion-track'>"
+        f"<b>Potential FC {_html(_fmt_money(potential_fc))}</b></div><div class='v84-completion-track'>"
         f"<i class='v84-cost-done' style='width:{cost_done_pct:.2f}%'></i>"
         f"<i class='v84-cost-remaining' style='width:{cost_remaining_pct:.2f}%'></i></div>"
         f"<div class='v84-track-labels'><span>VOWD {_html(_fmt_money(vowd))}</span><span>ETC {_html(_fmt_money(etc))}</span></div></div>"
@@ -28027,32 +28091,27 @@ def render_executive_overview(bundle: Dict[str, Any], profiles: Dict[str, Any], 
     by_scope = {str(a.get("scope_id")): a for a in assessments}
     st.markdown("<div class='v80-scope-grid'>" + "".join(_v80_scope_card(rec, by_scope[str(rec.get("scope_id"))], selected_year, selected_week, cutoff) for rec in records) + "</div>", unsafe_allow_html=True)
 
-    _v80_period_head("Delivery progress", selected_year, selected_week, month)
-    left, right = st.columns(2, gap="medium")
-    with left:
-        _chart_header_v76("Progress actual vs forecast", "Construction and engineering")
-        _plot_decision_chart_v76(_current_progress_figure_v81(assessments), "v83_overview_progress_current")
-    with right:
-        _chart_header_v76("Progress deviation trend", "Actual minus forecast")
-        _plot_decision_chart_v76(_progress_history_figure_v80(selected_year, selected_week), "v83_overview_progress_history")
-
-    _v80_period_head("Action control", selected_year, selected_week, month)
-    left, right = st.columns(2, gap="medium")
-    with left:
-        _chart_header_v76("Action mix by scope", "Current week")
-        _plot_decision_chart_v76(_current_action_mix_figure_v81(assessments), "v83_overview_action_mix")
-    with right:
-        _chart_header_v76("Actions requiring attention", "Weekly movement")
-        _plot_decision_chart_v76(_actions_history_figure_v80(selected_year, selected_week), "v83_overview_actions_history")
+    _v80_period_head("Control pressure", selected_year, selected_week, month)
+    _chart_header_v76("Control pressure heatmap", f"Relative position and last 6 weeks through W{int(selected_week):02d}")
+    _plot_decision_chart_v76(_pm_heatmap_figure_v55(assessments, selected_year, selected_week, cutoff), "v85_overview_pressure_heatmap")
 
     _v80_period_head("Cost control", selected_year, selected_week, month)
     waterfall_cols = st.columns(3, gap="small")
     for column, scope_id in zip(waterfall_cols, ("rail", "ponds", "roads")):
         with column:
-            _chart_header_v76(f"{_scope_label_v32(scope_id)} waterfall", "Budget to ETC")
+            _chart_header_v76(f"{_scope_label_v32(scope_id)} waterfall", "ETC = Potential FC - VOWD")
             _plot_decision_chart_v76(_cost_waterfall_figure_v80(scope_id), f"v84_overview_cost_waterfall_{scope_id}")
-    _chart_header_v76("Monthly cost movement", "Potential FC, signed VOWD and ETC")
+    _chart_header_v76("Monthly cost movement", "Potential FC, VOWD and ETC")
     _plot_decision_chart_v76(_cost_history_figure_v80("all", ["Potential forecast", "VOWD", "ETC"]), "v84_overview_cost_history")
+
+    _v80_period_head("Action control", selected_year, selected_week, month)
+    left, right = st.columns(2, gap="medium")
+    with left:
+        _chart_header_v76("Action mix by scope", "Current week")
+        _plot_decision_chart_v76(_current_action_mix_figure_v81(assessments), "v85_overview_action_mix")
+    with right:
+        _chart_header_v76("Actions requiring attention", "Weekly movement")
+        _plot_decision_chart_v76(_actions_history_figure_v80(selected_year, selected_week), "v85_overview_actions_history")
 
     _v80_period_head("Open controls", selected_year, selected_week, month)
     _chart_header_v76("Open control load", "Quality, engineering and interfaces")
